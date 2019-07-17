@@ -42,7 +42,7 @@
 ## 2. Please help me in this way.
 <!--- 请详细描述下我需要怎么做才能符合你的需求。 -->
 
-## 3. Here is a Demo. 
+## 3. Here is a Demo and screenshots.
 
 <!--- 尽量提供一个可以复现的Demo，我的邮箱：luohanchenyilong@163.com。或者前往 Telegram 群交流：https://t.me/iosobjc -->
 
