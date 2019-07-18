@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => 'https://github.com/iteatimeteam/ClaretCache.git', :tag => s.version.to_s }
   
   s.requires_arc = true
-  s.source_files = 'ClaretCache/*.{h,m}'
+  s.source_files = 'ClaretCache/*'
   s.public_header_files = 'ClaretCache/*.{h}'
   
   s.libraries = 'sqlite3'

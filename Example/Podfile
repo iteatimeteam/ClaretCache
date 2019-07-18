@@ -1,0 +1,6 @@
+use_frameworks!
+
+target 'ClaretCache_Example' do
+  pod 'ClaretCache', :path => '../'
+
+end
