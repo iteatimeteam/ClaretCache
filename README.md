@@ -5,11 +5,9 @@
 
 --------------------------------------------
 
-![](https://github.com/iteatimeteam/ClaretCache/blob/master/Design/banner.png)
+![](https://github.com/iteatimeteam/ClaretCache/Design/banner.png)
 
-<!--- 
-![](http://ww2.sinaimg.cn/large/006tNc79gy1g59kizl2apj31l80e5wgi.jpg)
--->
+
 
 --------------------------------------------
 
@@ -26,7 +24,7 @@ iTeaTime(技术清谈)团队出品。
 进度
 --------------------------------------------
 
-### 项目进度以及任务认领：
+项目进度以及任务认领：
 
 人员 | 地址
 :-------------:|:-------------:
