@@ -5,7 +5,7 @@
 
 --------------------------------------------
 
-![](http://ww4.sinaimg.cn/large/006tNc79gy1g534ye65wuj31sr0q277g.jpg)
+![](https://github.com/iteatimeteam/ClaretCache/blob/master/Design/banner.png)
 
 --------------------------------------------
 
