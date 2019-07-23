@@ -1,5 +1,5 @@
 ---
-name: Bug report
+name: "[EN]Bug report.[CN]bug反馈."
 about: Create a report to help us improve
 title: ''
 labels: bug

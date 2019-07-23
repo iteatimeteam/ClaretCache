@@ -1,12 +1,13 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: "[EN]Q-A:"
+about: "[CN]Q-A问题询问，使用方法或者无法确认是否为bug，可以选择该模版。"
 title: ''
-labels: bug
+labels: ''
 assignees: ''
 
 ---
 
+--------------------------------------------
 ![](http://ww2.sinaimg.cn/large/006tNc79gy1g59kizl2apj31l80e5wgi.jpg)
 
 ----------
@@ -31,37 +32,7 @@ assignees: ''
 
 ----------
 
+## My issue:
+<!--- Please describe which issue do you want to fix. -->
 
-## Base Info for this issue 
-
-<!--- 基本信息 -->
-
-<!--- 每个类的第五行都标记有版本号，请贴出。 -->
-
- 1. Version：Latest Version as [here](https://github.com/iteatimeteam/ClaretCache/blob/master/ClaretCache.podspec) 
- 2. main language of App ：Objective-C/Swift
- 4. iOS System Version：iOS12
- 5. Prototype（是否是真机）：YES
- 6. Issue Type：Crash、Bug、Enhancement（希望能支持一个新需求）、Q-A
-
-## 1. How to reproduce the problem.
-<!--- 请详细描述下复现步骤。 -->
-
-## 2. Please help me in this way.
-<!--- 请详细描述下我需要怎么做才能符合你的需求。 -->
-
-## 3. Here is a Demo and screenshots. 
-
-<!--- 尽量提供一个可以复现的Demo，我的邮箱：luohanchenyilong@163.com。或者前往 Telegram 群交流：https://t.me/iosobjc -->
-
-## 4. Here is my Debug log
-
-<!--- 请尽量提供详细的日志打印信息，控制台默认会有网络请求的打印信息，请将相关的日志贴出-->
-
-
-
-
-
-----------
-
-<p align="center"><a href="http://weibo.com/u/1692391497?s=6uyXnP" target="_blank"><img border="0" src="http://service.t.sina.com.cn/widget/qmd/1692391497/b46c844b/1.png"/></a></a>
+<!--- Please mention me to merge with wechat:chenyilong1010,或者前往 Telegram 群交流 https://t.me/CYLTabBarController -->
