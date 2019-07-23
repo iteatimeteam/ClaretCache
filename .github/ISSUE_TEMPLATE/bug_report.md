@@ -7,7 +7,12 @@ assignees: ''
 
 ---
 
+
+![](https://github.com/iteatimeteam/ClaretCache/blob/master/Design/banner.png)
+
+<!--- 
 ![](http://ww2.sinaimg.cn/large/006tNc79gy1g59kizl2apj31l80e5wgi.jpg)
+-->
 
 ----------
 
