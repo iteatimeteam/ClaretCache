@@ -35,43 +35,32 @@ class LinkedMap {
     private var tail: LinkedMapNode? // LRU, do not change it directly
     private var releaseOnMainThread: Bool = false
     private var releaseAsynchronously: Bool = true
-    
     init() {
         var keyCallbacks = kCFTypeDictionaryKeyCallBacks
         var valueCallbacks = kCFTypeDictionaryValueCallBacks
-        dic = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &keyCallbacks, &valueCallbacks);
+        dic = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &keyCallbacks, &valueCallbacks)
     }
-    
-    
 }
 
 extension LinkedMap {
     /// Insert a node at head and update the total cost.
     /// Node and node.key should not be nil.
     func insert(atHead node: LinkedMapNode) {
-        
     }
-    
     /// Bring a inner node to header.
     /// Node should already inside the dic.
     func bring(toHead node: LinkedMapNode) {
-        
     }
-    
     /// Remove a inner node and update the total cost.
     /// Node should already inside the dic.
     func remove(_ node: LinkedMapNode) {
-        
     }
-    
     /// Remove tail node if exist.
     func removeTail() -> LinkedMapNode? {
         let tempTail = tail
         return tempTail
     }
-    
     /// Remove all node in background queue.
     func removeAll() {
-        
     }
 }
