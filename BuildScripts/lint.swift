@@ -4,7 +4,8 @@ import Foundation
 
 func run(targetPath: String) {
     let relativePath = CommandLine.arguments[0] as NSString
-    let configFilePath = relativePath.deletingLastPathComponent + "/.swiftlint.yml"
+    print(relativePath)
+    let configFilePath = relativePath.deletingLastPathComponent + "/../configs/.swiftlint.yml"
     let configFileUrl = URL(fileURLWithPath: configFilePath)
     let configPath = configFileUrl.path
     let launchPath = relativePath.deletingLastPathComponent.components(separatedBy: "/..").first! + "/../Pods/SwiftLint/swiftlint"
