@@ -15,6 +15,7 @@
 		01C75DF622E0724000C7D03F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DF422E0724000C7D03F /* LaunchScreen.storyboard */; };
 		01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686B22E719DB008E24FC /* MemoryCache.swift */; };
 		01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686C22E719DB008E24FC /* ClaretCache.swift */; };
+		8E077CCCBC628B6EF406E97A /* Pods_ClaretCacheDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,9 @@
 		01C75DF722E0724000C7D03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		01FA686B22E719DB008E24FC /* MemoryCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MemoryCache.swift; sourceTree = "<group>"; };
 		01FA686C22E719DB008E24FC /* ClaretCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClaretCache.swift; sourceTree = "<group>"; };
+		1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ClaretCacheDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.release.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.release.xcconfig"; sourceTree = "<group>"; };
+		96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.debug.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +39,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				01ADE0E622E08661005DC3D4 /* ClaretCache in Frameworks */,
+				8E077CCCBC628B6EF406E97A /* Pods_ClaretCacheDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +51,8 @@
 			children = (
 				01C75DEA22E0723E00C7D03F /* ClaretCacheDemo */,
 				01C75DE922E0723E00C7D03F /* Products */,
+				79D8C1A4BEAF0AE66614A083 /* Pods */,
+				53C8A8FFD2D1D8A4F837C496 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -88,6 +95,23 @@
 			path = ClaretCache;
 			sourceTree = "<group>";
 		};
+		53C8A8FFD2D1D8A4F837C496 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		79D8C1A4BEAF0AE66614A083 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */,
+				71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -95,10 +119,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 01C75DFA22E0724000C7D03F /* Build configuration list for PBXNativeTarget "ClaretCacheDemo" */;
 			buildPhases = (
+				F3E5A49D06B895518A09FF37 /* [CP] Check Pods Manifest.lock */,
 				01C75DE422E0723E00C7D03F /* Sources */,
 				01C75DE522E0723E00C7D03F /* Frameworks */,
 				01C75DE622E0723E00C7D03F /* Resources */,
-				01FA686F22E719F3008E24FC /* ShellScript */,
+				01FA686F22E719F3008E24FC /* Lint Script */,
 			);
 			buildRules = (
 			);
@@ -162,7 +187,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		01FA686F22E719F3008E24FC /* ShellScript */ = {
+		01FA686F22E719F3008E24FC /* Lint Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 12;
 			files = (
@@ -171,13 +196,36 @@
 			);
 			inputPaths = (
 			);
+			name = "Lint Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif which swiftlint >/dev/null; then\nswiftlint\nelse\necho \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+			shellScript = "\"${SRCROOT}/BuildScripts/lint.swift\" \"${SRCROOT}\"\n";
+		};
+		F3E5A49D06B895518A09FF37 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ClaretCacheDemo-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -333,6 +381,7 @@
 		};
 		01C75DFB22E0724000C7D03F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -352,6 +401,7 @@
 		};
 		01C75DFC22E0724000C7D03F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;

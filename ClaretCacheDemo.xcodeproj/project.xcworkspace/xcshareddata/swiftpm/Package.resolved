@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "ClaretCache",
+        "repositoryURL": "https://github.com/iteatimeteam/ClaretCache.git",
+        "state": {
+          "branch": "master",
+          "revision": "f4afb1f10d1d35076eef323354cd4c8678bb7317",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
