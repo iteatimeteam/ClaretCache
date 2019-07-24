@@ -18,7 +18,6 @@ func run(targetPath: String) {
 
     let status = process.terminationStatus
     exit(status)
-
 }
 
 run(targetPath: CommandLine.arguments[1])
