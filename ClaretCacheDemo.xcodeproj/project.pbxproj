@@ -13,6 +13,8 @@
 		01C75DF122E0723E00C7D03F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DEF22E0723E00C7D03F /* Main.storyboard */; };
 		01C75DF322E0724000C7D03F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DF222E0724000C7D03F /* Assets.xcassets */; };
 		01C75DF622E0724000C7D03F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DF422E0724000C7D03F /* LaunchScreen.storyboard */; };
+		01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686B22E719DB008E24FC /* MemoryCache.swift */; };
+		01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686C22E719DB008E24FC /* ClaretCache.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +25,8 @@
 		01C75DF222E0724000C7D03F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		01C75DF522E0724000C7D03F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		01C75DF722E0724000C7D03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		01FA686B22E719DB008E24FC /* MemoryCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MemoryCache.swift; sourceTree = "<group>"; };
+		01FA686C22E719DB008E24FC /* ClaretCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClaretCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,11 +63,29 @@
 				01C75DEB22E0723E00C7D03F /* AppDelegate.swift */,
 				01C75DED22E0723E00C7D03F /* ViewController.swift */,
 				01C75DEF22E0723E00C7D03F /* Main.storyboard */,
+				01FA686922E719DB008E24FC /* Sources */,
 				01C75DF222E0724000C7D03F /* Assets.xcassets */,
 				01C75DF422E0724000C7D03F /* LaunchScreen.storyboard */,
 				01C75DF722E0724000C7D03F /* Info.plist */,
 			);
 			path = ClaretCacheDemo;
+			sourceTree = "<group>";
+		};
+		01FA686922E719DB008E24FC /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				01FA686A22E719DB008E24FC /* ClaretCache */,
+			);
+			path = Sources;
+			sourceTree = SOURCE_ROOT;
+		};
+		01FA686A22E719DB008E24FC /* ClaretCache */ = {
+			isa = PBXGroup;
+			children = (
+				01FA686B22E719DB008E24FC /* MemoryCache.swift */,
+				01FA686C22E719DB008E24FC /* ClaretCache.swift */,
+			);
+			path = ClaretCache;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -76,6 +98,7 @@
 				01C75DE422E0723E00C7D03F /* Sources */,
 				01C75DE522E0723E00C7D03F /* Frameworks */,
 				01C75DE622E0723E00C7D03F /* Resources */,
+				01FA686F22E719F3008E24FC /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -138,13 +161,35 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		01FA686F22E719F3008E24FC /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 12;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif which swiftlint >/dev/null; then\nswiftlint\nelse\necho \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		01C75DE422E0723E00C7D03F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */,
 				01C75DEE22E0723E00C7D03F /* ViewController.swift in Sources */,
 				01C75DEC22E0723E00C7D03F /* AppDelegate.swift in Sources */,
+				01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -350,7 +395,7 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		01ADE0E422E08661005DC3D4 /* XCRemoteSwiftPackageReference "ClaretCache" */ = {
 			isa = XCRemoteSwiftPackageReference;
-repositoryURL = "https://github.com/iteatimeteam/ClaretCache.git";
+			repositoryURL = "https://github.com/iteatimeteam/ClaretCache.git";
 			requirement = {
 				branch = master;
 				kind = branch;
