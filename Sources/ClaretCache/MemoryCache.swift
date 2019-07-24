@@ -84,7 +84,7 @@ public final class MemoryCache<Key, Value> where Key: Hashable {
     private(set) var totalCost: UInt = 0
 
     private var lock: pthread_mutex_t
-    private let lru: LinkedMap = LinkedMap<Key, Value>()
+    private let lru: LinkedMap<Key, Value> = LinkedMap<Key, Value>()
     private var queue: DispatchQueue
 
     public init() {
@@ -119,12 +119,12 @@ public extension MemoryCache {
 
     /// Sets the value of the specified key in the cache, and associates the key-value
     /// pair with the specified cost.
-    /// - Parameter object: The object to store in the cache. If nil, it calls **remove(_ atKey:)**.
+    /// - Parameter value: The object to store in the cache. If nil, it calls **remove(_ atKey:)**.
     /// - Parameter atKey: The atKey with which to associate the value. If nil, this method has no effect.
     /// - Parameter cost: The cost with which to associate the key-value pair.
-    final func set<Value, Key>(_ object: Value?, _ atKey: Key?, cost: UInt = 0) {
-        // Delete new if object is nil
-        // Cache if object is not nil
+    final func set<Value, Key>(_ value: Value?, _ atKey: Key?, cost: UInt = 0) {
+        // Delete new if value is nil
+        // Cache if value is not nil
     }
 
     /// Removes the value of the specified key in the cache.
@@ -219,32 +219,28 @@ private extension MemoryCache {
 }
 
 /**
- A node in linked map.
- Typically, you should not use this class directly.
- */
-private final class LinkedMapNode<Key, Value> where Key : Hashable {
-    var prev: LinkedMapNode?
-    var next: LinkedMapNode?
-    var key: Key?
-    var value: Value?
-    var cost: UInt = 0
-    var time: TimeInterval = 0.0
-}
-
-/**
  A linked map used by MemoryCache.
  It's not thread-safe and does not validate the parameters.
 
  Typically, you should not use this class directly.
  */
-private final class LinkedMap<Key, Value> where Key : Hashable {
+fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     var dic: [Key:Value] = [:]
     var totalCost: UInt = 0
     var totalCount: UInt = 0
-    var head: LinkedMapNode<Key, Value>? // MRU, do not change it directly
-    var tail: LinkedMapNode<Key, Value>? // LRU, do not change it directly
+    var head: Node<Key, Value>? // MRU, do not change it directly
+    var tail: Node<Key, Value>? // LRU, do not change it directly
     var releaseOnMainThread: Bool = false
     var releaseAsynchronously: Bool = true
+
+    final class Node<Key, Value> where Key : Hashable {
+        var prev: Node?
+        var next: Node?
+        var key: Key?
+        var value: Value?
+        var cost: UInt = 0
+        var time: TimeInterval = 0.0
+    }
 
     init() {
 
@@ -255,24 +251,24 @@ extension LinkedMap {
 
     /// Insert a node at head and update the total cost.
     /// Node and node.key should not be nil.
-    final func insert(atHead node: LinkedMapNode<Key, Value>) {
+    final func insert(atHead node: Node<Key, Value>) {
 
     }
 
     /// Bring a inner node to header.
     /// Node should already inside the dic.
-    final func bring(toHead node: LinkedMapNode<Key, Value>) {
+    final func bring(toHead node: Node<Key, Value>) {
 
     }
 
     /// Remove a inner node and update the total cost.
     /// Node should already inside the dic.
-    final func remove(_ node: LinkedMapNode<Key, Value>) {
+    final func remove(_ node: Node<Key, Value>) {
 
     }
 
     /// Remove tail node if exist.
-    final func removeTail() -> LinkedMapNode<Key, Value>? {
+    final func removeTail() -> Node<Key, Value>? {
         let tempTail = tail
         return tempTail
     }
