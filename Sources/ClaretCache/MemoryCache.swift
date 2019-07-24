@@ -12,7 +12,7 @@ import Foundation
 import UIKit.UIApplication
 #endif
 
-public final class MemoryCache {
+public final class MemoryCache<Key, Value> where Key: Hashable {
 
     /// The name of the cache. **Default** is **"default"**
     var name: String = "default"
@@ -60,6 +60,8 @@ public final class MemoryCache {
     /// A closure to be executed when the app enter background.
     /// **The default value is nil**.
     var didEnterBackground: ((MemoryCache) -> Void)?
+
+    private var observers: [NSObjectProtocol] = []
     #endif
 
     /// If **YES**, the key-value pair will be released on main thread, otherwise on background thread.
@@ -82,7 +84,7 @@ public final class MemoryCache {
     private(set) var totalCost: UInt = 0
 
     private var lock: pthread_mutex_t
-    private let lru: LinkedMap = LinkedMap()
+    private let lru: LinkedMap = LinkedMap<Key, Value>()
     private var queue: DispatchQueue
 
     public init() {
@@ -111,7 +113,7 @@ public extension MemoryCache {
     /// Returns a Boolean value that indicates whether a given key is in cache.
     /// - Parameter atKey: atKey An object identifying the value. If nil, just return **NO**.
     /// - Returns: Whether the atKey is in cache.
-    final func contains<K>(_ atKey: K?) -> Bool where K: Hashable {
+    final func contains(_ atKey: Key?) -> Bool {
         return false
     }
 
@@ -120,7 +122,7 @@ public extension MemoryCache {
     /// - Parameter object: The object to store in the cache. If nil, it calls **remove(_ atKey:)**.
     /// - Parameter atKey: The atKey with which to associate the value. If nil, this method has no effect.
     /// - Parameter cost: The cost with which to associate the key-value pair.
-    final func set<O, K>(_ object: O?, _ atKey: K?, cost: UInt = 0) where O: Any, K: Hashable {
+    final func set<Value, Key>(_ object: Value?, _ atKey: Key?, cost: UInt = 0) {
         // Delete new if object is nil
         // Cache if object is not nil
     }
@@ -128,7 +130,7 @@ public extension MemoryCache {
     /// Removes the value of the specified key in the cache.
     /// - Parameter atKey: atKey The atKey identifying the value to be removed.
     /// If nil, this method has no effect.
-    final func remove<K>(_ atKey: K?) where K: Hashable {
+    final func remove(_ atKey: Key?) {
 
     }
 
@@ -137,7 +139,7 @@ public extension MemoryCache {
 
     }
 
-    final subscript<O, K>(_ atKey: K?) -> O? where O: Any, K: Hashable {
+    final subscript(_ atKey: Key?) -> Value? {
         get {
             return nil
         }
@@ -176,27 +178,30 @@ private extension MemoryCache {
 
     #if os(iOS) && canImport(UIKit)
     func addNotification() {
-        NotificationCenter.default
-            .addObserver(self, selector: #selector(MemoryCache.appDidReceiveMemoryWarningNotification), name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
-        NotificationCenter.default
-            .addObserver(self, selector: #selector(MemoryCache.appDidEnterBackgroundNotification), name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+       let memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification ,object: nil, queue: nil) { [weak self] _ in
+            guard let self = self else { return }
+            self.didReceiveMemoryWarning?(self)
+            if self.removeAllObjectsOnMemoryWarning {
+                self.removeAll()
+            }
+        }
+
+        let enterBackgroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { [weak self] _ in
+            guard let self = self else { return }
+            self.didEnterBackground?(self)
+            if self.removeAllObjectsWhenEnteringBackground {
+                self.removeAll()
+            }
+        }
+        self.observers.append(contentsOf: [memoryWarningObserver, enterBackgroundObserver])
     }
 
     func removeNotification() {
-        NotificationCenter.default
-            .removeObserver(self, name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
-        NotificationCenter.default
-            .removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
-    }
-
-    @objc
-    func appDidReceiveMemoryWarningNotification() {
-
-    }
-
-    @objc
-    func appDidEnterBackgroundNotification() {
-
+        self.observers.forEach {
+            NotificationCenter.default.removeObserver($0)
+        }
+        self.observers.removeAll()
     }
     #endif
 
@@ -217,11 +222,11 @@ private extension MemoryCache {
  A node in linked map.
  Typically, you should not use this class directly.
  */
-private final class LinkedMapNode {
+private final class LinkedMapNode<Key, Value> where Key : Hashable {
     var prev: LinkedMapNode?
     var next: LinkedMapNode?
-    var key: Any?
-    var value: Any?
+    var key: Key?
+    var value: Value?
     var cost: UInt = 0
     var time: TimeInterval = 0.0
 }
@@ -232,19 +237,17 @@ private final class LinkedMapNode {
 
  Typically, you should not use this class directly.
  */
-private final class LinkedMap {
-    var dic: CFMutableDictionary
+private final class LinkedMap<Key, Value> where Key : Hashable {
+    var dic: [Key:Value] = [:]
     var totalCost: UInt = 0
     var totalCount: UInt = 0
-    var head: LinkedMapNode? // MRU, do not change it directly
-    var tail: LinkedMapNode? // LRU, do not change it directly
+    var head: LinkedMapNode<Key, Value>? // MRU, do not change it directly
+    var tail: LinkedMapNode<Key, Value>? // LRU, do not change it directly
     var releaseOnMainThread: Bool = false
     var releaseAsynchronously: Bool = true
 
     init() {
-        var keyCallbacks = kCFTypeDictionaryKeyCallBacks
-        var valueCallbacks = kCFTypeDictionaryValueCallBacks
-        dic = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &keyCallbacks, &valueCallbacks)
+
     }
 }
 
@@ -252,24 +255,24 @@ extension LinkedMap {
 
     /// Insert a node at head and update the total cost.
     /// Node and node.key should not be nil.
-    final func insert(atHead node: LinkedMapNode) {
+    final func insert(atHead node: LinkedMapNode<Key, Value>) {
 
     }
 
     /// Bring a inner node to header.
     /// Node should already inside the dic.
-    final func bring(toHead node: LinkedMapNode) {
+    final func bring(toHead node: LinkedMapNode<Key, Value>) {
 
     }
 
     /// Remove a inner node and update the total cost.
     /// Node should already inside the dic.
-    final func remove(_ node: LinkedMapNode) {
+    final func remove(_ node: LinkedMapNode<Key, Value>) {
 
     }
 
     /// Remove tail node if exist.
-    final func removeTail() -> LinkedMapNode? {
+    final func removeTail() -> LinkedMapNode<Key, Value>? {
         let tempTail = tail
         return tempTail
     }
