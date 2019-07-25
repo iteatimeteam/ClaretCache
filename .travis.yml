@@ -10,7 +10,8 @@ jobs:
       - swiftlint
       - swift test
       - swift build
-      - xcodebuild -workspace ClaretCacheDemo.xcworkspace -scheme ClaretCacheDemo -sdk `xcodebuild -showsdks | grep -Eo "iphonesimulator([0-9]{1,}\.)+[0-9]{1,}"`  build
+      - ls -l
+      - xcodebuild -workspace ./ClaretCacheDemo.xcworkspace -scheme ClaretCacheDemo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone XR,OS=12.1' build
 # stages:
 # - Lint
 # - Test
