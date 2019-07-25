@@ -148,6 +148,23 @@ public extension MemoryCache {
         }
     }
 
+    /// The auto trim check func
+    /// Stop when object is release
+    final func trimRecusively() {
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + autoTrimInterval) { [weak self] in
+            guard self != nil else {
+                return
+            }
+            
+            self?.trimInBackground()
+            self?.trimRecusively()
+        }
+    }
+    
+    final func trimInBackground() {
+        
+    }
+    
     /// Removes objects from the cache with LRU,
     /// until the **totalCount** is below or equal to the specified value.
     /// - Parameter count: The total count allowed to remain after the cache has been trimmed.
@@ -204,7 +221,7 @@ private extension MemoryCache {
         self.observers.removeAll()
     }
     #endif
-
+    
     final func trimCount(_ count: UInt) {
 
     }
