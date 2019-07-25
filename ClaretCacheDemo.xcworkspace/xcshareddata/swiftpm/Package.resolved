@@ -2,7 +2,7 @@
   "object": {
     "pins": [
       {
-        "package": "ClaretCache",
+        "package": "ClaretCacheDemo",
         "repositoryURL": "https://github.com/iteatimeteam/ClaretCache.git",
         "state": {
           "branch": "master",
