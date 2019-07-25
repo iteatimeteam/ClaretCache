@@ -10,7 +10,6 @@ jobs:
       - swiftlint
       - swift test
       - swift build
-      - ls -l
       - xcodebuild -workspace ClaretCacheDemo.xcworkspace -scheme ClaretCacheDemo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone XR,OS=12.1' build
 # stages:
 # - Lint
