@@ -3,11 +3,10 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		01ADE0E622E08661005DC3D4 /* ClaretCache in Frameworks */ = {isa = PBXBuildFile; productRef = 01ADE0E522E08661005DC3D4 /* ClaretCache */; };
 		01C75DEC22E0723E00C7D03F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C75DEB22E0723E00C7D03F /* AppDelegate.swift */; };
 		01C75DEE22E0723E00C7D03F /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C75DED22E0723E00C7D03F /* ViewController.swift */; };
 		01C75DF122E0723E00C7D03F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DEF22E0723E00C7D03F /* Main.storyboard */; };
@@ -34,7 +33,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				01ADE0E622E08661005DC3D4 /* ClaretCache in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,7 +104,6 @@
 			);
 			name = ClaretCacheDemo;
 			packageProductDependencies = (
-				01ADE0E522E08661005DC3D4 /* ClaretCache */,
 			);
 			productName = ClaretCacheDemo;
 			productReference = 01C75DE822E0723E00C7D03F /* ClaretCacheDemo.app */;
@@ -137,7 +134,6 @@
 			);
 			mainGroup = 01C75DDF22E0723E00C7D03F;
 			packageReferences = (
-				01ADE0E422E08661005DC3D4 /* XCRemoteSwiftPackageReference "ClaretCache" */,
 			);
 			productRefGroup = 01C75DE922E0723E00C7D03F /* Products */;
 			projectDirPath = "";
@@ -391,25 +387,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		01ADE0E422E08661005DC3D4 /* XCRemoteSwiftPackageReference "ClaretCache" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/iteatimeteam/ClaretCache.git";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		01ADE0E522E08661005DC3D4 /* ClaretCache */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 01ADE0E422E08661005DC3D4 /* XCRemoteSwiftPackageReference "ClaretCache" */;
-			productName = ClaretCache;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 01C75DE022E0723E00C7D03F /* Project object */;
 }
