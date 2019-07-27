@@ -12,6 +12,10 @@ import Foundation
 import UIKit.UIApplication
 #endif
 
+#if canImport(QuartzCore)
+import QuartzCore.CABase
+#endif
+
 public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable {
 
     /// The name of the cache. **Default** is **"com.iteatimeteam.ClaretCache.memory.default"**
@@ -44,7 +48,7 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
     ///  its limits, and if the limit is reached, it begins to evict objects.
     var autoTrimInterval: TimeInterval = 5.0
 
-    #if os(iOS) && canImport(UIKit)
+    #if canImport(UIKit)
     /// If **YES**, the cache will remove all objects when the app receives a memory warning.
     /// The **default** value is **YES**.
     var removeAllObjectsOnMemoryWarning: Bool = true
@@ -175,7 +179,7 @@ public extension MemoryCache {
             return
         }
         self.lock {
-            let now = CACurrentMediaTime()
+            let now = currentTime()
             if let node = self.lru.dic[atKey] {
                 self.lru.totalCost -= node.cost
                 self.lru.totalCount += cost
@@ -234,7 +238,7 @@ public extension MemoryCache {
                 guard let node = self.lru.dic[atKey] else {
                     return nil
                 }
-                node.time = CACurrentMediaTime()
+                node.time = currentTime()
                 self.lru.bring(toHead: node)
                 return node.value
             }
@@ -353,7 +357,7 @@ private extension MemoryCache {
     }
 
     final func trimAge(_ ageLimit: TimeInterval) {
-        let now = CACurrentMediaTime()
+        let now = currentTime()
         var finish = self.lockRead { () -> Bool in
             if ageLimit == .zero {
                 self.lru.removeAll()
@@ -435,6 +439,14 @@ private extension MemoryCache {
                 DispatchQueue.main.async(execute: execute)
             }
         }
+    }
+
+    final func currentTime() -> TimeInterval {
+        #if canImport(QuartzCore)
+        return CACurrentMediaTime()
+        #else
+        return Date().timeIntervalSince1970
+        #endif
     }
 }
 
