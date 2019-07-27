@@ -12,10 +12,10 @@ import Foundation
 import UIKit.UIApplication
 #endif
 
-public final class MemoryCache<Key, Value> where Key: Hashable {
+public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable {
 
-    /// The name of the cache. **Default** is **"default"**
-    var name: String = "default"
+    /// The name of the cache. **Default** is **"com.iteatimeteam.ClaretCache.memory.default"**
+    var name: String = "com.iteatimeteam.ClaretCache.memory.default"
 
     /// The maximum number of objects the cache should hold.
     ///
@@ -69,38 +69,96 @@ public final class MemoryCache<Key, Value> where Key: Hashable {
     ///
     /// You may set this value to **YES** if the key-value object contains
     /// **the instance which should be released in main thread (such as UIView/CALayer)**.
-    var releaseOnMainThread: Bool = false
+    var releaseOnMainThread: Bool {
+        set {
+           pthread_mutex_lock(&(self.lock))
+           defer {
+               pthread_mutex_unlock(&(self.lock))
+           }
+           self.lru.releaseOnMainThread = newValue
+       }
+       get {
+           pthread_mutex_lock(&(self.lock))
+           defer {
+               pthread_mutex_unlock(&(self.lock))
+           }
+           let flag = self.lru.releaseOnMainThread
+           return flag
+       }
+    }
 
     /// If **YES**, the key-value pair will be released asynchronously to avoid blocking
     ///
     /// the access methods, otherwise it will be released in the access method
     /// (such as removeObjectForKey:). **Default is YES**.
-    var releaseAsynchronously: Bool = true
+    var releaseAsynchronously: Bool {
+        set {
+            pthread_mutex_lock(&(self.lock))
+            defer {
+                pthread_mutex_unlock(&(self.lock))
+            }
+            self.lru.releaseAsynchronously = newValue
+        }
+        get {
+            pthread_mutex_lock(&(self.lock))
+            defer {
+                pthread_mutex_unlock(&(self.lock))
+            }
+            let flag = self.lru.releaseAsynchronously
+            return flag
+        }
+    }
 
     /// The number of objects in the cache (read-only)
-    private(set) var totalCount: UInt = 0
+    var totalCount: UInt {
+        pthread_mutex_lock(&(self.lock))
+        defer {
+            pthread_mutex_unlock(&(self.lock))
+        }
+        let count = self.lru.totalCount
+        return count
+    }
 
     /// The total cost of objects in the cache (read-only).
-    private(set) var totalCost: UInt = 0
+    var totalCost: UInt {
+        pthread_mutex_lock(&(self.lock))
+        defer {
+            pthread_mutex_unlock(&(self.lock))
+        }
+        let count = self.lru.totalCost
+        return count
+    }
 
     private var lock: pthread_mutex_t
     private let lru: LinkedMap<Key, Value> = LinkedMap<Key, Value>()
     private var queue: DispatchQueue
 
-    public init() {
+    init(name: String = "com.iteatimeteam.ClaretCache.memory.default",
+         costLimit: UInt = UInt.max,
+         countLimit: UInt = UInt.max,
+         ageLimit: TimeInterval = TimeInterval(Double.greatestFiniteMagnitude),
+         autoTrimInterval: TimeInterval = 5.0) {
+        self.name = name
+        self.costLimit = costLimit
+        self.countLimit = countLimit
+        self.ageLimit = ageLimit
+        self.autoTrimInterval = autoTrimInterval
+
         self.lock = .init()
         pthread_mutex_init(&(self.lock), nil)
         self.queue = DispatchQueue(label: "com.iteatimeteam.ClaretCache.memory", qos: DispatchQoS.default)
         #if os(iOS) && canImport(UIKit)
         self.addNotification()
         #endif
+        self.trimRecursively()
     }
 
     deinit {
-        pthread_mutex_destroy(&(self.lock))
         #if os(iOS) && canImport(UIKit)
         self.removeNotification()
         #endif
+        self.lru.removeAll()
+        pthread_mutex_destroy(&(self.lock))
     }
 }
 
@@ -113,8 +171,13 @@ public extension MemoryCache {
     /// Returns a Boolean value that indicates whether a given key is in cache.
     /// - Parameter atKey: atKey An object identifying the value. If nil, just return **NO**.
     /// - Returns: Whether the atKey is in cache.
-    final func contains(_ atKey: Key?) -> Bool {
-        return false
+    final func contains(_ atKey: Key) -> Bool {
+        pthread_mutex_lock(&(self.lock))
+        defer {
+            pthread_mutex_unlock(&(self.lock))
+        }
+        let contains = self.lru.dic[atKey] != nil
+        return contains
     }
 
     /// Sets the value of the specified key in the cache, and associates the key-value
@@ -122,26 +185,100 @@ public extension MemoryCache {
     /// - Parameter value: The object to store in the cache. If nil, it calls **remove(_ atKey:)**.
     /// - Parameter atKey: The atKey with which to associate the value. If nil, this method has no effect.
     /// - Parameter cost: The cost with which to associate the key-value pair.
-    final func set<Value, Key>(_ value: Value?, _ atKey: Key?, cost: UInt = 0) {
+    final func set(_ value: Value?, _ atKey: Key, cost: UInt = 0) {
         // Delete new if value is nil
         // Cache if value is not nil
+        guard let value = value else {
+            self.remove(atKey)
+            return
+        }
+        pthread_mutex_lock(&(self.lock))
+        defer {
+            pthread_mutex_unlock(&(self.lock))
+        }
+
+        let now = CACurrentMediaTime()
+        if let node = self.lru.dic[atKey] {
+            self.lru.totalCost -= node.cost
+            self.lru.totalCount += cost
+            node.cost = cost
+            node.time = now
+            node.value = value
+            self.lru.bring(toHead: node)
+        } else {
+            let node = LinkedMap<Key, Value>.Node<Key, Value>(atKey: atKey, value: value, cost: cost)
+            node.time = now
+            self.lru.insert(atHead: node)
+        }
+
+        if self.lru.totalCost > self.costLimit {
+            self.queue.async {
+                self.trimTo(cost: self.costLimit)
+            }
+        }
+
+        if self.lru.totalCount > self.countLimit {
+            if let node = self.lru.removeTail() {
+                if self.lru.releaseAsynchronously {
+                    let queue = self.lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
+                    queue.async {
+                        //hold and release in queue
+                        _ = node.cost
+                    }
+                } else if self.lru.releaseOnMainThread && pthread_main_np() != 0 {
+                    DispatchQueue.main.async {
+                        //hold and release in queue
+                        _ = node.cost
+                    }
+                }
+            }
+        }
     }
 
     /// Removes the value of the specified key in the cache.
     /// - Parameter atKey: atKey The atKey identifying the value to be removed.
     /// If nil, this method has no effect.
-    final func remove(_ atKey: Key?) {
-
+    final func remove(_ atKey: Key) {
+        pthread_mutex_lock(&(self.lock))
+        defer {
+            pthread_mutex_unlock(&(self.lock))
+        }
+        guard let node = self.lru.dic[atKey] else { return }
+        self.lru.remove(node)
+        if self.lru.releaseAsynchronously {
+            let queue = self.lru.releaseAsynchronously ? DispatchQueue.main : memoryCacheReleaseQueue()
+            queue.async {
+                _ = node.cost //hold and release in queue
+            }
+        } else if self.lru.releaseOnMainThread && pthread_main_np() != .zero {
+            DispatchQueue.main.async {
+                _ = node.cost //hold and release in queue
+            }
+        }
     }
 
     /// Empties the cache immediately.
     final func removeAll() {
+        pthread_mutex_lock(&(self.lock))
+        defer {
+            pthread_mutex_unlock(&(self.lock))
+        }
 
+        self.lru.removeAll()
     }
 
-    final subscript(_ atKey: Key?) -> Value? {
+    final subscript(_ atKey: Key) -> Value? {
         get {
-            return nil
+            pthread_mutex_lock(&(self.lock))
+            defer {
+                pthread_mutex_unlock(&(self.lock))
+            }
+            guard let node = self.lru.dic[atKey] else {
+                return nil
+            }
+            node.time = CACurrentMediaTime()
+            self.lru.bring(toHead: node)
+            return node.value
         }
         set {
             self.set(newValue, atKey)
@@ -152,6 +289,11 @@ public extension MemoryCache {
     /// until the **totalCount** is below or equal to the specified value.
     /// - Parameter count: The total count allowed to remain after the cache has been trimmed.
     final func trimTo(count: UInt) {
+        guard count > .zero else {
+            self.removeAll()
+            return
+        }
+
         self.trimCount(count)
     }
 
@@ -163,7 +305,7 @@ public extension MemoryCache {
 
     /// Removes objects from the cache with LRU, until all expiry objects removed by the specified value.
     /// - Parameter age: The maximum age (in seconds) of objects.
-    final func trimTo(age: UInt) {
+    final func trimTo(age: TimeInterval) {
         self.trimAge(age)
     }
 }
@@ -179,7 +321,7 @@ private extension MemoryCache {
     #if os(iOS) && canImport(UIKit)
     func addNotification() {
 
-       let memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification ,object: nil, queue: nil) { [weak self] _ in
+       let memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [weak self] _ in
             guard let self = self else { return }
             self.didReceiveMemoryWarning?(self)
             if self.removeAllObjectsOnMemoryWarning {
@@ -205,17 +347,110 @@ private extension MemoryCache {
     }
     #endif
 
-    final func trimCount(_ count: UInt) {
+    final func trimLRU(path: KeyPath<LinkedMap<Key, Value>, UInt>, limit: UInt) {
 
+        var finish = false
+        pthread_mutex_lock(&(self.lock))
+        if limit == .zero {
+            self.lru.removeAll()
+            finish = true
+        } else if self.lru[keyPath: path] <= limit {
+            finish = true
+        }
+        pthread_mutex_unlock(&(self.lock))
+        guard !finish else { return }
+
+        var holder: [LinkedMap<Key, Value>.Node<Key, Value>] = []
+
+        while !finish {
+            if pthread_mutex_trylock(&(self.lock)) == .zero {
+                if self.lru[keyPath: path] > limit {
+                    if let node = self.lru.removeTail() {
+                        holder.append(node)
+                    }
+                } else {
+                    finish = true
+                }
+                pthread_mutex_unlock(&(self.lock))
+            } else {
+                usleep(10 * 1000) //10 ms
+            }
+        }
+
+        guard !holder.isEmpty else { return }
+
+        let queue = self.lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
+        queue.async {
+            _ = holder.isEmpty // release in queue
+        }
     }
 
-    final func trimCost(_ cost: UInt) {
-
+    final func trimCost(_ costLimit: UInt) {
+        self.trimLRU(path: \.totalCost, limit: costLimit)
     }
 
-    final func trimAge(_ age: UInt) {
-
+    final func trimCount(_ countLimit: UInt) {
+        self.trimLRU(path: \.totalCount, limit: countLimit)
     }
+
+    final func trimAge(_ ageLimit: TimeInterval) {
+        var finish = false
+        let now = CACurrentMediaTime()
+        pthread_mutex_lock(&(self.lock))
+        if ageLimit == .zero {
+            self.lru.removeAll()
+            finish = true
+        } else if self.lru.tail != nil || (now - (self.lru.tail?.time ?? 0)) <= ageLimit {
+            finish = true
+        }
+        pthread_mutex_unlock(&(self.lock))
+        guard !finish else { return }
+
+        var holder: [LinkedMap<Key, Value>.Node<Key, Value>] = []
+
+        while !finish {
+            if pthread_mutex_trylock(&(self.lock)) == .zero {
+                if let tail = self.lru.tail, (now - tail.time) > ageLimit {
+                    if let node = self.lru.removeTail() {
+                        holder.append(node)
+                    }
+                } else {
+                    finish = true
+                }
+                pthread_mutex_unlock(&(self.lock))
+            } else {
+                usleep(10 * 1000) //10 ms
+            }
+        }
+
+        guard !holder.isEmpty else { return }
+
+        let queue = self.lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
+        queue.async {
+            _ = holder.isEmpty // release in queue
+        }
+    }
+
+    final func trimRecursively() {
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + self.autoTrimInterval) { [weak self] in
+            guard let self = self else { return }
+            self.trimInBackground()
+            self.trimRecursively()
+        }
+    }
+
+    final func trimInBackground() {
+        self.queue.async { [weak self] in
+            guard let self = self else { return }
+            self.trimTo(cost: self.costLimit)
+            self.trimTo(count: self.countLimit)
+            self.trimTo(age: self.ageLimit)
+        }
+    }
+}
+
+private func memoryCacheReleaseQueue() -> DispatchQueue {
+    return DispatchQueue.global(qos: .utility)
 }
 
 /**
@@ -224,8 +459,8 @@ private extension MemoryCache {
 
  Typically, you should not use this class directly.
  */
-fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
-    var dic: [Key:Value] = [:]
+fileprivate final class LinkedMap<Key, Value> where Key: Hashable, Value: Equatable {
+    var dic: [Key: Node<Key, Value>] = [:]
     var totalCost: UInt = 0
     var totalCount: UInt = 0
     var head: Node<Key, Value>? // MRU, do not change it directly
@@ -233,17 +468,24 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     var releaseOnMainThread: Bool = false
     var releaseAsynchronously: Bool = true
 
-    final class Node<Key, Value> where Key : Hashable {
+    final class Node<Key, Value>: Equatable where Key: Hashable, Value: Equatable {
         var prev: Node?
         var next: Node?
-        var key: Key?
+        var key: Key!
         var value: Value?
         var cost: UInt = 0
         var time: TimeInterval = 0.0
-    }
 
-    init() {
+       convenience init(atKey: Key, value: Value?, cost: UInt = 0) {
+            self.init()
+            self.key = atKey
+            self.value = value
+            self.cost = cost
+        }
 
+        static func == (lhs: Node<Key, Value>, rhs: Node<Key, Value>) -> Bool {
+            return lhs.key == rhs.key && lhs.value == rhs.value
+        }
     }
 }
 
@@ -252,29 +494,100 @@ extension LinkedMap {
     /// Insert a node at head and update the total cost.
     /// Node and node.key should not be nil.
     final func insert(atHead node: Node<Key, Value>) {
-
+        self.dic[node.key] = node
+        self.totalCost += node.cost
+        self.totalCount += 1
+        if self.head != nil {
+            node.next = self.head
+            self.head?.prev = node
+            self.head = node
+        } else {
+            self.tail = node
+            self.head = self.tail
+        }
     }
 
     /// Bring a inner node to header.
     /// Node should already inside the dic.
     final func bring(toHead node: Node<Key, Value>) {
+        guard self.head == node else { return }
+        if let tail = self.tail, tail == node {
+            self.tail = node.prev
+            self.tail?.next = nil
+        } else {
+            node.next?.prev = node.prev
+            node.prev?.next = node.next
+        }
 
+        node.next = self.head
+        node.prev = nil
+        self.head?.prev = node
+        self.head = node
     }
 
     /// Remove a inner node and update the total cost.
     /// Node should already inside the dic.
     final func remove(_ node: Node<Key, Value>) {
+        self.dic.removeValue(forKey: node.key)
+        self.totalCost -= node.cost
+        self.totalCount -= 1
 
+        if node.next != nil {
+            node.next?.prev = node.prev
+        }
+
+        if node.prev != nil {
+            node.prev?.next = node.next
+        }
+
+        if self.head == node {
+            self.head = node.next
+        }
+
+        if self.tail == node {
+            self.tail = node.prev
+        }
     }
 
     /// Remove tail node if exist.
     final func removeTail() -> Node<Key, Value>? {
-        let tempTail = tail
-        return tempTail
+        guard let tail = self.tail else { return nil }
+        self.dic.removeValue(forKey: tail.key)
+        self.totalCost -= tail.cost
+        self.totalCount -= 1
+        if self.head == tail {
+            self.head = nil
+            self.tail = nil
+        } else {
+            self.tail = tail.prev
+            self.tail?.next = nil
+        }
+        return tail
     }
 
     /// Remove all node in background queue.
     final func removeAll() {
+        self.totalCost = 0
+        self.totalCount = 0
+        self.head = nil
+        self.tail = nil
+        guard !self.dic.isEmpty else { return }
 
+        let holder: [Key: Node<Key, Value>] = self.dic
+        self.dic = [:]
+        if self.releaseAsynchronously {
+            let queue = self.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
+            queue.async {
+                // hold and release in specified queue
+               _ = holder.count
+            }
+        } else if self.releaseOnMainThread && pthread_main_np() == 0 {
+            DispatchQueue.main.async {
+                // hold and release in specified queue
+                _ = holder.count
+            }
+        } else {
+            // nothing
+        }
     }
 }
