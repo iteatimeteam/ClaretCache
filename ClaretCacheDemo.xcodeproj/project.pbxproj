@@ -14,7 +14,19 @@
 		01C75DF622E0724000C7D03F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DF422E0724000C7D03F /* LaunchScreen.storyboard */; };
 		01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686B22E719DB008E24FC /* MemoryCache.swift */; };
 		01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686C22E719DB008E24FC /* ClaretCache.swift */; };
+		8E077CCCBC628B6EF406E97A /* Pods_ClaretCacheDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */; };
+		F8C53E7722EB9EBC00B53664 /* ClaretCacheDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8C53E7622EB9EBC00B53664 /* ClaretCacheDemoTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F8C53E7922EB9EBC00B53664 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 01C75DE022E0723E00C7D03F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 01C75DE722E0723E00C7D03F;
+			remoteInfo = ClaretCacheDemo;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		01C75DE822E0723E00C7D03F /* ClaretCacheDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaretCacheDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -26,10 +38,24 @@
 		01C75DF722E0724000C7D03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		01FA686B22E719DB008E24FC /* MemoryCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MemoryCache.swift; sourceTree = "<group>"; };
 		01FA686C22E719DB008E24FC /* ClaretCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClaretCache.swift; sourceTree = "<group>"; };
+		1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ClaretCacheDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.release.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.release.xcconfig"; sourceTree = "<group>"; };
+		96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.debug.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		F8C53E7422EB9EBC00B53664 /* ClaretCacheDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClaretCacheDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F8C53E7622EB9EBC00B53664 /* ClaretCacheDemoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaretCacheDemoTests.swift; sourceTree = "<group>"; };
+		F8C53E7822EB9EBC00B53664 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		01C75DE522E0723E00C7D03F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E077CCCBC628B6EF406E97A /* Pods_ClaretCacheDemo.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F8C53E7122EB9EBC00B53664 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -43,7 +69,10 @@
 			isa = PBXGroup;
 			children = (
 				01C75DEA22E0723E00C7D03F /* ClaretCacheDemo */,
+				F8C53E7522EB9EBC00B53664 /* ClaretCacheDemoTests */,
 				01C75DE922E0723E00C7D03F /* Products */,
+				79D8C1A4BEAF0AE66614A083 /* Pods */,
+				53C8A8FFD2D1D8A4F837C496 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -51,6 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				01C75DE822E0723E00C7D03F /* ClaretCacheDemo.app */,
+				F8C53E7422EB9EBC00B53664 /* ClaretCacheDemoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -86,6 +116,32 @@
 			path = ClaretCache;
 			sourceTree = "<group>";
 		};
+		53C8A8FFD2D1D8A4F837C496 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		79D8C1A4BEAF0AE66614A083 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */,
+				71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		F8C53E7522EB9EBC00B53664 /* ClaretCacheDemoTests */ = {
+			isa = PBXGroup;
+			children = (
+				F8C53E7622EB9EBC00B53664 /* ClaretCacheDemoTests.swift */,
+				F8C53E7822EB9EBC00B53664 /* Info.plist */,
+			);
+			path = ClaretCacheDemoTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -93,10 +149,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 01C75DFA22E0724000C7D03F /* Build configuration list for PBXNativeTarget "ClaretCacheDemo" */;
 			buildPhases = (
+				F3E5A49D06B895518A09FF37 /* [CP] Check Pods Manifest.lock */,
 				01C75DE422E0723E00C7D03F /* Sources */,
 				01C75DE522E0723E00C7D03F /* Frameworks */,
 				01C75DE622E0723E00C7D03F /* Resources */,
-				01FA686F22E719F3008E24FC /* ShellScript */,
+				01FA686F22E719F3008E24FC /* Lint Script */,
 			);
 			buildRules = (
 			);
@@ -109,18 +166,41 @@
 			productReference = 01C75DE822E0723E00C7D03F /* ClaretCacheDemo.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F8C53E7322EB9EBC00B53664 /* ClaretCacheDemoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F8C53E7D22EB9EBC00B53664 /* Build configuration list for PBXNativeTarget "ClaretCacheDemoTests" */;
+			buildPhases = (
+				F8C53E7022EB9EBC00B53664 /* Sources */,
+				F8C53E7122EB9EBC00B53664 /* Frameworks */,
+				F8C53E7222EB9EBC00B53664 /* Resources */,
+				F8C53E7E22EB9ECC00B53664 /* Lint Script */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F8C53E7A22EB9EBC00B53664 /* PBXTargetDependency */,
+			);
+			name = ClaretCacheDemoTests;
+			productName = ClaretCacheDemoTests;
+			productReference = F8C53E7422EB9EBC00B53664 /* ClaretCacheDemoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		01C75DE022E0723E00C7D03F /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1020;
+				LastSwiftUpdateCheck = 1100;
 				LastUpgradeCheck = 1020;
 				ORGANIZATIONNAME = com.ClaretCache;
 				TargetAttributes = {
 					01C75DE722E0723E00C7D03F = {
 						CreatedOnToolsVersion = 10.2.1;
+					};
+					F8C53E7322EB9EBC00B53664 = {
+						CreatedOnToolsVersion = 11.0;
+						TestTargetID = 01C75DE722E0723E00C7D03F;
 					};
 				};
 			};
@@ -140,6 +220,7 @@
 			projectRoot = "";
 			targets = (
 				01C75DE722E0723E00C7D03F /* ClaretCacheDemo */,
+				F8C53E7322EB9EBC00B53664 /* ClaretCacheDemoTests */,
 			);
 		};
 /* End PBXProject section */
@@ -155,10 +236,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F8C53E7222EB9EBC00B53664 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		01FA686F22E719F3008E24FC /* ShellScript */ = {
+		01FA686F22E719F3008E24FC /* Lint Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 12;
 			files = (
@@ -167,13 +255,54 @@
 			);
 			inputPaths = (
 			);
+			name = "Lint Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif which swiftlint >/dev/null; then\nswiftlint\nelse\necho \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+			shellScript = "\"${SRCROOT}/BuildScripts/lint.swift\" \"${SRCROOT}\"\n";
+		};
+		F3E5A49D06B895518A09FF37 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ClaretCacheDemo-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F8C53E7E22EB9ECC00B53664 /* Lint Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Lint Script";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/BuildScripts/lint.swift\" \"${SRCROOT}\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -189,7 +318,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F8C53E7022EB9EBC00B53664 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F8C53E7722EB9EBC00B53664 /* ClaretCacheDemoTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F8C53E7A22EB9EBC00B53664 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 01C75DE722E0723E00C7D03F /* ClaretCacheDemo */;
+			targetProxy = F8C53E7922EB9EBC00B53664 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		01C75DEF22E0723E00C7D03F /* Main.storyboard */ = {
@@ -329,6 +474,7 @@
 		};
 		01C75DFB22E0724000C7D03F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -339,7 +485,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.ClaretCache.ClaretCacheDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ClaretCache.-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -348,6 +494,7 @@
 		};
 		01C75DFC22E0724000C7D03F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -358,10 +505,50 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.ClaretCache.ClaretCacheDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ClaretCache.-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F8C53E7B22EB9EBC00B53664 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = ClaretCacheDemoTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ClaretCache.ClaretCacheDemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClaretCacheDemo.app/ClaretCacheDemo";
+			};
+			name = Debug;
+		};
+		F8C53E7C22EB9EBC00B53664 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = ClaretCacheDemoTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ClaretCache.ClaretCacheDemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClaretCacheDemo.app/ClaretCacheDemo";
 			};
 			name = Release;
 		};
@@ -382,6 +569,15 @@
 			buildConfigurations = (
 				01C75DFB22E0724000C7D03F /* Debug */,
 				01C75DFC22E0724000C7D03F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F8C53E7D22EB9EBC00B53664 /* Build configuration list for PBXNativeTarget "ClaretCacheDemoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8C53E7B22EB9EBC00B53664 /* Debug */,
+				F8C53E7C22EB9EBC00B53664 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
