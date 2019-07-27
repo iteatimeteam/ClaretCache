@@ -75,12 +75,10 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
     /// **the instance which should be released in main thread (such as UIView/CALayer)**.
     var releaseOnMainThread: Bool {
         set {
-            self.lock {
-                self.lru.releaseOnMainThread = newValue
-            }
+            lock { lru.releaseOnMainThread = newValue }
        }
        get {
-            return self.lockRead { self.lru.releaseOnMainThread }
+            return lockRead { lru.releaseOnMainThread }
        }
     }
 
@@ -90,9 +88,7 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
     /// (such as removeObjectForKey:). **Default is YES**.
     var releaseAsynchronously: Bool {
         set {
-            self.lock {
-                self.lru.releaseAsynchronously = newValue
-            }
+            lock { lru.releaseAsynchronously = newValue }
         }
         get {
             return self.lockRead { self.lru.releaseAsynchronously }
@@ -111,7 +107,7 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
 
     private var mutex: pthread_mutex_t
     private let lru: LinkedMap<Key, Value> = LinkedMap<Key, Value>()
-    private var queue: DispatchQueue
+    private let queue: DispatchQueue
 
     /// The constructor
     /// - Parameter name: The name of the cache.
@@ -129,6 +125,7 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
          countLimit: UInt = UInt.max,
          ageLimit: TimeInterval = TimeInterval(Double.greatestFiniteMagnitude),
          autoTrimInterval: TimeInterval = 5.0) {
+
         self.name = name
         self.costLimit = costLimit
         self.countLimit = countLimit
@@ -319,9 +316,8 @@ private extension MemoryCache {
                 return true
             } else if lru[keyPath: path] <= limit {
                 return true
-            } else {
-                return false
             }
+            return false
         }
         guard !finish else { return }
 
@@ -360,14 +356,13 @@ private extension MemoryCache {
     final func trimAge(_ ageLimit: TimeInterval) {
         let now = currentTime()
         var finish = lockRead { () -> Bool in
-            if ageLimit == .zero {
+            if ageLimit <= .zero {
                 lru.removeAll()
                 return true
-            } else if lru.tail != nil || (now - (lru.tail?.time ?? 0)) <= ageLimit {
+            } else if lru.tail == nil || (now - (lru.tail?.time ?? 0)) <= ageLimit {
                 return  true
-            } else {
-                return false
             }
+            return false
         }
         guard !finish else { return }
 
@@ -396,7 +391,7 @@ private extension MemoryCache {
     }
 
     final func trimRecursively() {
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + autoTrimInterval) { [weak self] in
+        memoryCacheReleaseQueue().asyncAfter(deadline: .now() + autoTrimInterval) { [weak self] in
             guard let self = self else { return }
             self.trimInBackground()
             self.trimRecursively()
@@ -404,7 +399,7 @@ private extension MemoryCache {
     }
 
     final func trimInBackground() {
-        self.queue.async { [weak self] in
+        queue.async { [weak self] in
             guard let self = self else { return }
             self.trimTo(cost: self.costLimit)
             self.trimTo(count: self.countLimit)
@@ -434,7 +429,7 @@ private extension MemoryCache {
             queue.async(execute: execute)
         } else {
             if lru.releaseAsynchronously {
-                let queue = lru.releaseAsynchronously ? DispatchQueue.main : memoryCacheReleaseQueue()
+                let queue = lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
                 queue.async(execute: execute)
             } else if lru.releaseOnMainThread && pthread_main_np() != .zero {
                 DispatchQueue.main.async(execute: execute)
@@ -473,13 +468,12 @@ fileprivate final class LinkedMap<Key, Value> where Key: Hashable, Value: Equata
     final class Node<Key, Value>: Equatable where Key: Hashable, Value: Equatable {
         var prev: Node?
         var next: Node?
-        var key: Key!
+        let key: Key
         var value: Value?
         var cost: UInt = 0
         var time: TimeInterval = 0.0
 
-       convenience init(atKey: Key, value: Value?, cost: UInt = 0) {
-            self.init()
+        init(atKey: Key, value: Value?, cost: UInt = 0) {
             self.key = atKey
             self.value = value
             self.cost = cost
@@ -488,6 +482,12 @@ fileprivate final class LinkedMap<Key, Value> where Key: Hashable, Value: Equata
         static func == (lhs: Node<Key, Value>, rhs: Node<Key, Value>) -> Bool {
             return lhs.key == rhs.key && lhs.value == rhs.value
         }
+
+        #if ClaretCacheLOG
+        deinit {
+            print("[ClaretCache LOG]: cache for key: \(key) release in \(Thread.current)")
+        }
+        #endif
     }
 }
 
@@ -512,8 +512,9 @@ extension LinkedMap {
     /// Bring a inner node to header.
     /// Node should already inside the dic.
     final func bring(toHead node: Node<Key, Value>) {
-        guard head == node else { return }
-        if let tmpTail = tail, tmpTail == node {
+        guard head != node else { return }
+
+        if tail == node {
             tail = node.prev
             tail?.next = nil
         } else {
@@ -561,13 +562,13 @@ extension LinkedMap {
             head = nil
             tail = nil
         } else {
-            tail = tmpTail.prev
+            tail = tail?.prev
             tail?.next = nil
         }
-        return tail
+        return tmpTail
     }
 
-    /// Remove all node in background queue.
+    /// Remove all node
     final func removeAll() {
         totalCost = 0
         totalCount = 0
