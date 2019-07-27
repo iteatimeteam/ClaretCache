@@ -1,9 +1,5 @@
 ![](http://ww2.sinaimg.cn/large/006tNc79gy1g59kizl2apj31l80e5wgi.jpg)
 
-<!--- 
-![](http://ww2.sinaimg.cn/large/006tNc79gy1g59kizl2apj31l80e5wgi.jpg)
--->
-
 
 ## CheckList
 
