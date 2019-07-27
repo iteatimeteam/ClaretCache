@@ -8,14 +8,14 @@
 
 import Foundation
 
-#if os(iOS) && canImport(UIKit)
+#if canImport(UIKit)
 import UIKit.UIApplication
 #endif
 
 public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable {
 
     /// The name of the cache. **Default** is **"com.iteatimeteam.ClaretCache.memory.default"**
-    var name: String = "com.iteatimeteam.ClaretCache.memory.default"
+    let name: String
 
     /// The maximum number of objects the cache should hold.
     ///
@@ -71,19 +71,12 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
     /// **the instance which should be released in main thread (such as UIView/CALayer)**.
     var releaseOnMainThread: Bool {
         set {
-           pthread_mutex_lock(&(self.lock))
-           defer {
-               pthread_mutex_unlock(&(self.lock))
-           }
-           self.lru.releaseOnMainThread = newValue
+            self.lock {
+                self.lru.releaseOnMainThread = newValue
+            }
        }
        get {
-           pthread_mutex_lock(&(self.lock))
-           defer {
-               pthread_mutex_unlock(&(self.lock))
-           }
-           let flag = self.lru.releaseOnMainThread
-           return flag
+            return self.lockRead { self.lru.releaseOnMainThread }
        }
     }
 
@@ -93,46 +86,40 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
     /// (such as removeObjectForKey:). **Default is YES**.
     var releaseAsynchronously: Bool {
         set {
-            pthread_mutex_lock(&(self.lock))
-            defer {
-                pthread_mutex_unlock(&(self.lock))
+            self.lock {
+                self.lru.releaseAsynchronously = newValue
             }
-            self.lru.releaseAsynchronously = newValue
         }
         get {
-            pthread_mutex_lock(&(self.lock))
-            defer {
-                pthread_mutex_unlock(&(self.lock))
-            }
-            let flag = self.lru.releaseAsynchronously
-            return flag
+            return self.lockRead { self.lru.releaseAsynchronously }
         }
     }
 
     /// The number of objects in the cache (read-only)
     var totalCount: UInt {
-        pthread_mutex_lock(&(self.lock))
-        defer {
-            pthread_mutex_unlock(&(self.lock))
-        }
-        let count = self.lru.totalCount
-        return count
+        return self.lockRead { self.lru.totalCount }
     }
 
     /// The total cost of objects in the cache (read-only).
     var totalCost: UInt {
-        pthread_mutex_lock(&(self.lock))
-        defer {
-            pthread_mutex_unlock(&(self.lock))
-        }
-        let count = self.lru.totalCost
-        return count
+        return self.lockRead { self.lru.totalCost }
     }
 
-    private var lock: pthread_mutex_t
+    private var mutex: pthread_mutex_t
     private let lru: LinkedMap<Key, Value> = LinkedMap<Key, Value>()
     private var queue: DispatchQueue
 
+    /// The constructor
+    /// - Parameter name: The name of the cache.
+    /// The default value is **"com.iteatimeteam.ClaretCache.memory.default"**
+    /// - Parameter costLimit: The maximum total cost that the cache can hold before it starts evicting objects.
+    /// The default value is **UInt.max**, which means no limit.
+    /// - Parameter countLimit: The maximum number of objects the cache should hold.
+    /// The default value is **UInt.max**, which means no limit.
+    /// - Parameter ageLimit: The maximum expiry time of objects in cache.
+    /// The default value is **Double.greatestFiniteMagnitude**, which means no limit.
+    /// - Parameter autoTrimInterval: The auto trim check time interval in seconds.
+    /// The default value is **5.0**.
     init(name: String = "com.iteatimeteam.ClaretCache.memory.default",
          costLimit: UInt = UInt.max,
          countLimit: UInt = UInt.max,
@@ -144,21 +131,21 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
         self.ageLimit = ageLimit
         self.autoTrimInterval = autoTrimInterval
 
-        self.lock = .init()
-        pthread_mutex_init(&(self.lock), nil)
+        self.mutex = .init()
+        pthread_mutex_init(&(self.mutex), nil)
         self.queue = DispatchQueue(label: "com.iteatimeteam.ClaretCache.memory", qos: DispatchQoS.default)
-        #if os(iOS) && canImport(UIKit)
+        #if canImport(UIKit)
         self.addNotification()
         #endif
         self.trimRecursively()
     }
 
     deinit {
-        #if os(iOS) && canImport(UIKit)
+        #if canImport(UIKit)
         self.removeNotification()
         #endif
         self.lru.removeAll()
-        pthread_mutex_destroy(&(self.lock))
+        pthread_mutex_destroy(&(self.mutex))
     }
 }
 
@@ -172,12 +159,7 @@ public extension MemoryCache {
     /// - Parameter atKey: atKey An object identifying the value. If nil, just return **NO**.
     /// - Returns: Whether the atKey is in cache.
     final func contains(_ atKey: Key) -> Bool {
-        pthread_mutex_lock(&(self.lock))
-        defer {
-            pthread_mutex_unlock(&(self.lock))
-        }
-        let contains = self.lru.dic[atKey] != nil
-        return contains
+        return self.lockRead { self.lru.dic[atKey] != nil }
     }
 
     /// Sets the value of the specified key in the cache, and associates the key-value
@@ -192,41 +174,30 @@ public extension MemoryCache {
             self.remove(atKey)
             return
         }
-        pthread_mutex_lock(&(self.lock))
-        defer {
-            pthread_mutex_unlock(&(self.lock))
-        }
-
-        let now = CACurrentMediaTime()
-        if let node = self.lru.dic[atKey] {
-            self.lru.totalCost -= node.cost
-            self.lru.totalCount += cost
-            node.cost = cost
-            node.time = now
-            node.value = value
-            self.lru.bring(toHead: node)
-        } else {
-            let node = LinkedMap<Key, Value>.Node<Key, Value>(atKey: atKey, value: value, cost: cost)
-            node.time = now
-            self.lru.insert(atHead: node)
-        }
-
-        if self.lru.totalCost > self.costLimit {
-            self.queue.async {
-                self.trimTo(cost: self.costLimit)
+        self.lock {
+            let now = CACurrentMediaTime()
+            if let node = self.lru.dic[atKey] {
+                self.lru.totalCost -= node.cost
+                self.lru.totalCount += cost
+                node.cost = cost
+                node.time = now
+                node.value = value
+                self.lru.bring(toHead: node)
+            } else {
+                let node = LinkedMap<Key, Value>.Node<Key, Value>(atKey: atKey, value: value, cost: cost)
+                node.time = now
+                self.lru.insert(atHead: node)
             }
-        }
 
-        if self.lru.totalCount > self.countLimit {
-            if let node = self.lru.removeTail() {
-                if self.lru.releaseAsynchronously {
-                    let queue = self.lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
-                    queue.async {
-                        //hold and release in queue
-                        _ = node.cost
-                    }
-                } else if self.lru.releaseOnMainThread && pthread_main_np() != 0 {
-                    DispatchQueue.main.async {
+            if self.lru.totalCost > self.costLimit {
+                self.queue.async {
+                    self.trimTo(cost: self.costLimit)
+                }
+            }
+
+            if self.lru.totalCount > self.countLimit {
+                if let node = self.lru.removeTail() {
+                    self.release {
                         //hold and release in queue
                         _ = node.cost
                     }
@@ -239,46 +210,34 @@ public extension MemoryCache {
     /// - Parameter atKey: atKey The atKey identifying the value to be removed.
     /// If nil, this method has no effect.
     final func remove(_ atKey: Key) {
-        pthread_mutex_lock(&(self.lock))
+        pthread_mutex_lock(&(self.mutex))
         defer {
-            pthread_mutex_unlock(&(self.lock))
+            pthread_mutex_unlock(&(self.mutex))
         }
         guard let node = self.lru.dic[atKey] else { return }
         self.lru.remove(node)
-        if self.lru.releaseAsynchronously {
-            let queue = self.lru.releaseAsynchronously ? DispatchQueue.main : memoryCacheReleaseQueue()
-            queue.async {
-                _ = node.cost //hold and release in queue
-            }
-        } else if self.lru.releaseOnMainThread && pthread_main_np() != .zero {
-            DispatchQueue.main.async {
-                _ = node.cost //hold and release in queue
-            }
+        self.release {
+            _ = node.cost //hold and release in queue
         }
     }
 
     /// Empties the cache immediately.
     final func removeAll() {
-        pthread_mutex_lock(&(self.lock))
-        defer {
-            pthread_mutex_unlock(&(self.lock))
+        lock {
+            self.lru.removeAll()
         }
-
-        self.lru.removeAll()
     }
 
     final subscript(_ atKey: Key) -> Value? {
         get {
-            pthread_mutex_lock(&(self.lock))
-            defer {
-                pthread_mutex_unlock(&(self.lock))
+            return lockRead { () -> Value? in
+                guard let node = self.lru.dic[atKey] else {
+                    return nil
+                }
+                node.time = CACurrentMediaTime()
+                self.lru.bring(toHead: node)
+                return node.value
             }
-            guard let node = self.lru.dic[atKey] else {
-                return nil
-            }
-            node.time = CACurrentMediaTime()
-            self.lru.bring(toHead: node)
-            return node.value
         }
         set {
             self.set(newValue, atKey)
@@ -318,7 +277,7 @@ extension MemoryCache: CustomDebugStringConvertible {
 
 private extension MemoryCache {
 
-    #if os(iOS) && canImport(UIKit)
+    #if canImport(UIKit)
     func addNotification() {
 
        let memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [weak self] _ in
@@ -349,21 +308,22 @@ private extension MemoryCache {
 
     final func trimLRU(path: KeyPath<LinkedMap<Key, Value>, UInt>, limit: UInt) {
 
-        var finish = false
-        pthread_mutex_lock(&(self.lock))
-        if limit == .zero {
-            self.lru.removeAll()
-            finish = true
-        } else if self.lru[keyPath: path] <= limit {
-            finish = true
+        var finish = self.lockRead { () -> Bool in
+            if limit == .zero {
+                self.lru.removeAll()
+                return true
+            } else if self.lru[keyPath: path] <= limit {
+                return true
+            } else {
+                return false
+            }
         }
-        pthread_mutex_unlock(&(self.lock))
         guard !finish else { return }
 
         var holder: [LinkedMap<Key, Value>.Node<Key, Value>] = []
 
         while !finish {
-            if pthread_mutex_trylock(&(self.lock)) == .zero {
+            if pthread_mutex_trylock(&(self.mutex)) == .zero {
                 if self.lru[keyPath: path] > limit {
                     if let node = self.lru.removeTail() {
                         holder.append(node)
@@ -371,7 +331,7 @@ private extension MemoryCache {
                 } else {
                     finish = true
                 }
-                pthread_mutex_unlock(&(self.lock))
+                pthread_mutex_unlock(&(self.mutex))
             } else {
                 usleep(10 * 1000) //10 ms
             }
@@ -379,8 +339,7 @@ private extension MemoryCache {
 
         guard !holder.isEmpty else { return }
 
-        let queue = self.lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
-        queue.async {
+        self.release(trimed: true) {
             _ = holder.isEmpty // release in queue
         }
     }
@@ -394,22 +353,23 @@ private extension MemoryCache {
     }
 
     final func trimAge(_ ageLimit: TimeInterval) {
-        var finish = false
         let now = CACurrentMediaTime()
-        pthread_mutex_lock(&(self.lock))
-        if ageLimit == .zero {
-            self.lru.removeAll()
-            finish = true
-        } else if self.lru.tail != nil || (now - (self.lru.tail?.time ?? 0)) <= ageLimit {
-            finish = true
+        var finish = self.lockRead { () -> Bool in
+            if ageLimit == .zero {
+                self.lru.removeAll()
+                return true
+            } else if self.lru.tail != nil || (now - (self.lru.tail?.time ?? 0)) <= ageLimit {
+                return  true
+            } else {
+                return false
+            }
         }
-        pthread_mutex_unlock(&(self.lock))
         guard !finish else { return }
 
         var holder: [LinkedMap<Key, Value>.Node<Key, Value>] = []
 
         while !finish {
-            if pthread_mutex_trylock(&(self.lock)) == .zero {
+            if pthread_mutex_trylock(&(self.mutex)) == .zero {
                 if let tail = self.lru.tail, (now - tail.time) > ageLimit {
                     if let node = self.lru.removeTail() {
                         holder.append(node)
@@ -417,7 +377,7 @@ private extension MemoryCache {
                 } else {
                     finish = true
                 }
-                pthread_mutex_unlock(&(self.lock))
+                pthread_mutex_unlock(&(self.mutex))
             } else {
                 usleep(10 * 1000) //10 ms
             }
@@ -425,8 +385,7 @@ private extension MemoryCache {
 
         guard !holder.isEmpty else { return }
 
-        let queue = self.lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
-        queue.async {
+        self.release(trimed: true) {
             _ = holder.isEmpty // release in queue
         }
     }
@@ -445,6 +404,36 @@ private extension MemoryCache {
             self.trimTo(cost: self.costLimit)
             self.trimTo(count: self.countLimit)
             self.trimTo(age: self.ageLimit)
+        }
+    }
+
+    final func lock(execute: (() -> Void)) {
+        pthread_mutex_lock(&(self.mutex))
+        defer {
+            pthread_mutex_unlock(&(self.mutex))
+        }
+        execute()
+    }
+
+    final func lockRead<V>(execute: (() -> V)) -> V {
+        pthread_mutex_lock(&(self.mutex))
+        defer {
+            pthread_mutex_unlock(&(self.mutex))
+        }
+        return execute()
+    }
+
+    final func release(trimed: Bool = false, _ execute: @escaping (() -> Void)) {
+        if trimed {
+            let queue = self.lru.releaseOnMainThread ? DispatchQueue.main : memoryCacheReleaseQueue()
+            queue.async(execute: execute)
+        } else {
+            if self.lru.releaseAsynchronously {
+                let queue = self.lru.releaseAsynchronously ? DispatchQueue.main : memoryCacheReleaseQueue()
+                queue.async(execute: execute)
+            } else if self.lru.releaseOnMainThread && pthread_main_np() != .zero {
+                DispatchQueue.main.async(execute: execute)
+            }
         }
     }
 }
@@ -581,7 +570,7 @@ extension LinkedMap {
                 // hold and release in specified queue
                _ = holder.count
             }
-        } else if self.releaseOnMainThread && pthread_main_np() == 0 {
+        } else if self.releaseOnMainThread && pthread_main_np() != .zero {
             DispatchQueue.main.async {
                 // hold and release in specified queue
                 _ = holder.count
