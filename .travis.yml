@@ -7,10 +7,10 @@ jobs:
     install:
       - wget --output-document /tmp/SwiftLint.pkg https://github.com/realm/SwiftLint/releases/download/0.33.1/SwiftLint.pkg && sudo installer -pkg /tmp/SwiftLint.pkg -target /
     script:
-      - swiftlint
+      - swiftlint --config configs/.swiftlint.yml
       - swift test
       - swift build
-      - xcodebuild -scheme ClaretCacheDemo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone XR,OS=12.1' build
+      - xcodebuild -workspace ClaretCacheDemo.xcworkspace -scheme ClaretCacheDemo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone XR,OS=12.1' build
 # stages:
 # - Lint
 # - Test
