@@ -15,6 +15,8 @@
 		01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686B22E719DB008E24FC /* MemoryCache.swift */; };
 		01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686C22E719DB008E24FC /* ClaretCache.swift */; };
 		8E077CCCBC628B6EF406E97A /* Pods_ClaretCacheDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */; };
+		C30EB06522ED8E8A0064ED79 /* KVStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30EB06422ED8E8A0064ED79 /* KVStorage.swift */; };
+		C30EB06722ED9B1D0064ED79 /* UIApplication+CCAdd.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30EB06622ED9B1D0064ED79 /* UIApplication+CCAdd.swift */; };
 		F8C53E7722EB9EBC00B53664 /* ClaretCacheDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8C53E7622EB9EBC00B53664 /* ClaretCacheDemoTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +43,8 @@
 		1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ClaretCacheDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.release.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.release.xcconfig"; sourceTree = "<group>"; };
 		96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.debug.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		C30EB06422ED8E8A0064ED79 /* KVStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KVStorage.swift; sourceTree = "<group>"; };
+		C30EB06622ED9B1D0064ED79 /* UIApplication+CCAdd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIApplication+CCAdd.swift"; sourceTree = "<group>"; };
 		F8C53E7422EB9EBC00B53664 /* ClaretCacheDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClaretCacheDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8C53E7622EB9EBC00B53664 /* ClaretCacheDemoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaretCacheDemoTests.swift; sourceTree = "<group>"; };
 		F8C53E7822EB9EBC00B53664 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -112,6 +116,8 @@
 			children = (
 				01FA686B22E719DB008E24FC /* MemoryCache.swift */,
 				01FA686C22E719DB008E24FC /* ClaretCache.swift */,
+				C30EB06422ED8E8A0064ED79 /* KVStorage.swift */,
+				C30EB06622ED9B1D0064ED79 /* UIApplication+CCAdd.swift */,
 			);
 			path = ClaretCache;
 			sourceTree = "<group>";
@@ -313,7 +319,9 @@
 			files = (
 				01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */,
 				01C75DEE22E0723E00C7D03F /* ViewController.swift in Sources */,
+				C30EB06522ED8E8A0064ED79 /* KVStorage.swift in Sources */,
 				01C75DEC22E0723E00C7D03F /* AppDelegate.swift in Sources */,
+				C30EB06722ED9B1D0064ED79 /* UIApplication+CCAdd.swift in Sources */,
 				01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
