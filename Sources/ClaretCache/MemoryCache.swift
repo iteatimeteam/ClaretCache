@@ -179,7 +179,7 @@ private extension MemoryCache {
     #if os(iOS) && canImport(UIKit)
     func addNotification() {
 
-       let memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification ,object: nil, queue: nil) { [weak self] _ in
+       let memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [weak self] _ in
             guard let self = self else { return }
             self.didReceiveMemoryWarning?(self)
             if self.removeAllObjectsOnMemoryWarning {
@@ -224,8 +224,8 @@ private extension MemoryCache {
 
  Typically, you should not use this class directly.
  */
-fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
-    var dic: [Key:Value] = [:]
+fileprivate final class LinkedMap<Key, Value> where Key: Hashable {
+    var dic: [Key: Value] = [:]
     var totalCost: UInt = 0
     var totalCount: UInt = 0
     var head: Node<Key, Value>? // MRU, do not change it directly
@@ -233,7 +233,7 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     var releaseOnMainThread: Bool = false
     var releaseAsynchronously: Bool = true
 
-    final class Node<Key, Value> where Key : Hashable {
+    final class Node<Key, Value> where Key: Hashable {
         var prev: Node?
         var next: Node?
         var key: Key?
