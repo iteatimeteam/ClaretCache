@@ -108,6 +108,7 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
     private var mutex: pthread_mutex_t
     private let lru: LinkedMap<Key, Value> = LinkedMap<Key, Value>()
     private let queue: DispatchQueue
+    private let noSpinSource: CFRunLoopSource
 
     /// The constructor
     /// - Parameter name: The name of the cache.
@@ -135,6 +136,8 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
         mutex = .init()
         pthread_mutex_init(&mutex, nil)
         queue = DispatchQueue(label: "com.iteatimeteam.ClaretCache.memory", qos: DispatchQoS.default)
+        var noSpinCtx = CFRunLoopSourceContext()
+        noSpinSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &noSpinCtx)
         #if canImport(UIKit)
         addNotification()
         #endif
@@ -147,6 +150,7 @@ public final class MemoryCache<Key, Value> where Key: Hashable, Value: Equatable
         #endif
         lru.removeAll()
         pthread_mutex_destroy(&mutex)
+
     }
 }
 
@@ -321,6 +325,8 @@ private extension MemoryCache {
         }
         guard !finish else { return }
 
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), noSpinSource, CFRunLoopMode.defaultMode) // add Source
+
         var holder: [LinkedMap<Key, Value>.Node<Key, Value>] = []
 
         while !finish {
@@ -334,7 +340,7 @@ private extension MemoryCache {
                 }
                 pthread_mutex_unlock(&mutex)
             } else {
-                usleep(10 * 1000) //10 ms
+                CFRunLoopRunInMode(CFRunLoopMode.defaultMode, 0.01, false) // 10ms to handle input sources
             }
         }
 
@@ -366,6 +372,8 @@ private extension MemoryCache {
         }
         guard !finish else { return }
 
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), noSpinSource, CFRunLoopMode.defaultMode) // add Source
+
         var holder: [LinkedMap<Key, Value>.Node<Key, Value>] = []
 
         while !finish {
@@ -379,7 +387,7 @@ private extension MemoryCache {
                 }
                 pthread_mutex_unlock(&mutex)
             } else {
-                usleep(10 * 1000) //10 ms
+                CFRunLoopRunInMode(CFRunLoopMode.defaultMode, 0.01, false) // 10ms to handle input sources.10ms to handle input sources.
             }
         }
 
