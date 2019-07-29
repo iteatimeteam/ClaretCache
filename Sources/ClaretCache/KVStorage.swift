@@ -29,6 +29,20 @@ public enum KVStorageType {
     case mixed
 }
 
+/**
+ KVStorageItem is used by `KVStorage` to store key-value pair and meta data.
+ Typically, you should not use this class directly.
+ */
+public class KVStorageItem {
+    var key: String?            ///< key
+    var value: Data?            ///< value
+    var fileName: String?       ///< fileName (nil if inline)
+    var size: Int = 0           ///< value's size in bytes
+    var modTime: Int = 0        ///< modification unix timestamp
+    var accessTime: Int = 0     ///< last access unix timestamp
+    var extendedData: Data?     ///< extended data (nil if no extended data)
+}
+
 /*
  File:
  /path/
@@ -56,20 +70,6 @@ public enum KVStorageType {
  */
 
 public class KVStorage {
-    /**
-     KVStorageItem is used by `KVStorage` to store key-value pair and meta data.
-     Typically, you should not use this class directly.
-     */
-    fileprivate class KVStorageItem {
-        var key: String?            ///< key
-        var value: Data?            ///< value
-        var fileName: String?       ///< fileName (nil if inline)
-        var size: Int = 0           ///< value's size in bytes
-        var modTime: Int = 0        ///< modification unix timestamp
-        var accessTime: Int = 0     ///< last access unix timestamp
-        var extendedData: Data?     ///< extended data (nil if no extended data)
-    }
-
     fileprivate let kMaxErrorRetryCount = 8
     fileprivate let kMinRetryTimeInterval = 2.0
     fileprivate let kPathLengthMax = PATH_MAX - 64
@@ -163,23 +163,48 @@ public class KVStorage {
 
     // MARK: File
 
-    fileprivate func fileWrite(fileName: String, data: Data) throws {
-        try data.write(to: dataPath.appendingPathComponent(fileName))
+    fileprivate func fileWrite(fileName: String, data: Data) -> Bool {
+        do {
+            try data.write(to: dataPath.appendingPathComponent(fileName))
+        } catch {
+            log("\(#function) line:(\(#line) file write error. fileName: (\(fileName)")
+            return false
+        }
+        return true
     }
 
-    fileprivate func fileRead(fileName: String) throws -> Data? {
-        return try Data(contentsOf: dataPath.appendingPathComponent(fileName))
+    fileprivate func fileRead(fileName: String) -> Data? {
+        do {
+            return try Data(contentsOf: dataPath.appendingPathComponent(fileName))
+        } catch {
+            log("\(#function) line:(\(#line) file read error. fileName: (\(fileName)")
+            return nil
+        }
     }
 
-    fileprivate func deleteFile(fileName: String) throws {
-        try fileManger.removeItem(at: dataPath.appendingPathComponent(fileName))
+    @discardableResult
+    fileprivate func fileDelete(fileName: String) -> Bool {
+        do {
+            try fileManger.removeItem(at: dataPath.appendingPathComponent(fileName))
+        } catch {
+            log("\(#function) line:(\(#line) file delete error. fileName: (\(fileName)")
+            return false
+        }
+        return true
     }
 
-    fileprivate func fileMoveAllToTrash() throws {
+    @discardableResult
+    fileprivate func fileMoveAllToTrash() -> Bool {
         let uuid = UUID().uuidString
         let tmpPath = trashPath.appendingPathComponent(uuid)
-        try fileManger.moveItem(at: dataPath, to: tmpPath)
-        try fileManger.createDirectory(at: dataPath, withIntermediateDirectories: true, attributes: nil)
+        do {
+            try fileManger.moveItem(at: dataPath, to: tmpPath)
+            try fileManger.createDirectory(at: dataPath, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            log("\(#function) line:(\(#line) file move all to trash error.")
+            return false
+        }
+        return true
     }
 
     // empty the trash if failed at last time
@@ -330,23 +355,31 @@ public class KVStorage {
         }
     }
 
-    fileprivate func dbSave(key: String, value: Data, fileName: String, extendedData: Data) -> Bool {
+    fileprivate func dbSave(key: String, value: Data, fileName: String?, extendedData: Data?) -> Bool {
         let sql = "insert or replace into manifest (key, filename, size, inline_data, modification_time, last_access_time, extended_data) values (?1, ?2, ?3, ?4, ?5, ?6, ?7);"
         guard let stmt = dbPrepareStmt(sql) else {
             return false
         }
         let timestamp = Int32(time(nil))
         sqlite3_bind_text(stmt, 1, (key as NSString).utf8String, -1, nil)
-        sqlite3_bind_text(stmt, 2, (fileName as NSString).utf8String, -1, nil)
+        if let file = fileName {
+            sqlite3_bind_text(stmt, 2, (file as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_text(stmt, 2, nil, -1, nil)
+        }
         sqlite3_bind_int(stmt, 3, Int32(value.count))
-        if fileName.isEmpty {
+        if fileName?.isEmpty ?? false {
             sqlite3_bind_blob(stmt, 4, (value as NSData).bytes, Int32(value.count), nil)
         } else {
             sqlite3_bind_blob(stmt, 4, nil, 0, nil)
         }
         sqlite3_bind_int(stmt, 5, timestamp)
         sqlite3_bind_int(stmt, 6, timestamp)
-        sqlite3_bind_blob(stmt, 7, (extendedData as NSData).bytes, Int32(extendedData.count), nil)
+        if let exData = extendedData {
+            sqlite3_bind_blob(stmt, 7, (exData as NSData).bytes, Int32(exData.count), nil)
+        } else {
+            sqlite3_bind_blob(stmt, 7, nil, 0, nil)
+        }
 
         let result = sqlite3_step(stmt)
         if result != SQLITE_DONE {
@@ -356,6 +389,7 @@ public class KVStorage {
         return true
     }
 
+    @discardableResult
     fileprivate func dbUpdateAccessTime(_ key: String) -> Bool {
         let sql = "update manifest set last_access_time = ?1 where key = ?2;"
         guard let stmt = dbPrepareStmt(sql) else {
@@ -371,6 +405,7 @@ public class KVStorage {
         return true
     }
 
+    @discardableResult
     fileprivate func dbUpdateAccessTimes(_ keys: [String]) -> Bool {
         guard dbCheck() else {
             return false
@@ -392,6 +427,7 @@ public class KVStorage {
         return true
     }
 
+    @discardableResult
     fileprivate func dbDeleteItem(_ key: String) -> Bool {
         let sql = "delete from manifest where key = ?1;"
         guard let stmt = dbPrepareStmt(sql) else {
@@ -440,11 +476,11 @@ public class KVStorage {
         return true
     }
 
-    fileprivate func dbDeleteItemsWithSizeLargerThan(size: Int) -> Bool {
+    fileprivate func dbDeleteItemsWithSizeLargerThan(_ size: Int) -> Bool {
         return dbDeleteItem(sql: "delete from manifest where size > ?1;", param: Int32(size))
     }
 
-    fileprivate func dbDeleteItemsWithSizeEarlierThan(time: Int) -> Bool {
+    fileprivate func dbDeleteItemsWithTimeEarlierThan(_ time: Int) -> Bool {
         return dbDeleteItem(sql: "delete from manifest where last_access_time < ?1;", param: Int32(time))
     }
 
@@ -619,12 +655,12 @@ public class KVStorage {
         return fileNames
     }
 
-    fileprivate func dbGetFilenamesWithSizeLargerThan(size: Int) -> [String]? {
+    fileprivate func dbGetFilenamesWithSizeLargerThan(_ size: Int) -> [String]? {
         let sql = "select filename from manifest where size > ?1 and filename is not null;"
         return dbGetFilenames(sql: sql, param: Int32(size))
     }
 
-    fileprivate func dbGetFilenamesWithSizeEarlierThan(time: Int) -> [String]? {
+    fileprivate func dbGetFilenamesWithTimeEarlierThan(_ time: Int) -> [String]? {
         let sql = "select filename from manifest where last_access_time < ?1 and filename is not null;"
         return dbGetFilenames(sql: sql, param: Int32(time))
     }
@@ -687,5 +723,388 @@ public class KVStorage {
 
     fileprivate func dbGetTotalItemCount() -> Int {
         return dbGetInt("select count(*) from manifest;")
+    }
+
+    // MARK: Public
+    public func saveItem(key: String, value: Data, fileName: String?, extendedData: Data?) -> Bool {
+        guard !key.isEmpty, !value.isEmpty else {
+            return false
+        }
+        if type == .file && fileName?.isEmpty ?? true {
+            return false
+        }
+        if let file = fileName, !file.isEmpty {
+            if !fileWrite(fileName: file, data: value) {
+                return false
+            }
+            if !dbSave(key: key, value: value, fileName: file, extendedData: extendedData) {
+                fileDelete(fileName: file)
+                return false
+            }
+            return true
+        } else {
+            if type != .sqlite {
+                if let file = dbGetFilename(key: key) {
+                    fileDelete(fileName: file)
+                }
+            }
+            return dbSave(key: key, value: value, fileName: nil, extendedData: extendedData)
+        }
+    }
+
+    public func removeItem(key: String) -> Bool {
+        guard !key.isEmpty else {
+            return false
+        }
+        switch type {
+        case .sqlite:
+            return dbDeleteItem(key)
+        case .file, .mixed:
+            if let fileName = dbGetFilename(key: key) {
+                fileDelete(fileName: fileName)
+            }
+            return dbDeleteItem(key)
+        }
+    }
+
+    public func removeItems(keys: [String]) -> Bool {
+        guard !keys.isEmpty else {
+            return false
+        }
+        switch type {
+        case .sqlite:
+            return dbDeleteItems(keys)
+        case .file, .mixed:
+            if let fileNames = dbGetFileNames(keys: keys), !fileNames.isEmpty {
+                for file in fileNames {
+                    fileDelete(fileName: file)
+                }
+            }
+            return dbDeleteItems(keys)
+        }
+    }
+
+    public func removeAllItems() -> Bool {
+        guard dbClose() else {
+            return false
+        }
+        reset()
+        guard dbOpen() else {
+            return false
+        }
+        guard dbInitialize() else {
+            return false
+        }
+        return true
+    }
+
+    public func removeItemsLargerThanSize(_ size: Int) -> Bool {
+        guard size != Int.max else {
+            return true
+        }
+        guard size > 0 else {
+            return removeAllItems()
+        }
+        switch type {
+        case .sqlite:
+            if dbDeleteItemsWithSizeLargerThan(size) {
+                dbCheckpoint()
+                return true
+            }
+        case .file, .mixed:
+            if let fileNames = dbGetFilenamesWithSizeLargerThan(size) {
+                for file in fileNames {
+                    fileDelete(fileName: file)
+                }
+            }
+            if dbDeleteItemsWithSizeLargerThan(size) {
+                dbCheckpoint()
+                return true
+            }
+        }
+        return false
+    }
+
+    public func removeItemsEarlierThanTime(_ time: Int) -> Bool {
+        guard time > 0 else {
+            return true
+        }
+        guard time != Int.max else {
+            return removeAllItems()
+        }
+        switch type {
+        case .sqlite:
+            if dbDeleteItemsWithTimeEarlierThan(time) {
+                dbCheckpoint()
+                return true
+            }
+        case .file, .mixed:
+            if let fileNames = dbGetFilenamesWithTimeEarlierThan(time) {
+                for file in fileNames {
+                    fileDelete(fileName: file)
+                }
+            }
+            if dbDeleteItemsWithTimeEarlierThan(time) {
+                dbCheckpoint()
+                return true
+            }
+        }
+        return false
+    }
+
+    public func removeItemsToFitSize(_ maxSize: Int) -> Bool {
+        guard maxSize != Int.max else {
+            return true
+        }
+        guard maxSize > 0 else {
+            return removeAllItems()
+        }
+        var total = dbGetTotalItemSize()
+        guard total >= 0 else {
+            return false
+        }
+        guard total > maxSize else {
+            return true
+        }
+        var suc = false
+        let perCount = 16
+        repeat {
+            if let items = dbGetItemSizeInfoOrderByTimeAscWithLimit(count: perCount), !items.isEmpty {
+                for item in items {
+                    if total > maxSize {
+                        if let fileName = item.fileName {
+                            fileDelete(fileName: fileName)
+                        }
+                        if let key = item.key {
+                            suc = dbDeleteItem(key)
+                        } else {
+                            suc = true
+                        }
+                        total -= item.size
+                    } else {
+                        break
+                    }
+                    if !suc {
+                        break
+                    }
+                }
+            } else {
+                break
+            }
+        } while (total > maxSize && suc)
+        if suc {
+            dbCheckpoint()
+        }
+        return suc
+    }
+
+    public func removeItemsToFitCount(_ maxCount: Int) -> Bool {
+        guard maxCount != Int.max else {
+            return true
+        }
+        guard maxCount > 0 else {
+            return removeAllItems()
+        }
+        var total = dbGetTotalItemCount()
+        guard total >= 0 else {
+            return false
+        }
+        guard total > maxCount else {
+            return true
+        }
+        var suc = false
+        let perCount = 16
+        repeat {
+            if let items = dbGetItemSizeInfoOrderByTimeAscWithLimit(count: perCount), !items.isEmpty {
+                for item in items {
+                    if total > maxCount {
+                        if let fileName = item.fileName {
+                            fileDelete(fileName: fileName)
+                        }
+                        if let key = item.key {
+                            suc = dbDeleteItem(key)
+                        } else {
+                            suc = true
+                        }
+                        total -= 1
+                    } else {
+                        break
+                    }
+                    if !suc {
+                        break
+                    }
+                }
+            } else {
+                break
+            }
+        } while (total > maxCount && suc)
+        if suc {
+            dbCheckpoint()
+        }
+        return suc
+    }
+
+    public func removeAllItemsWithProgressBlock(progress: ((_ removedCount: Int, _ totalCount: Int) -> Void)?,
+                                                end: ((_ error: Bool) -> Void)?) {
+        let total = dbGetTotalItemCount()
+        if total <= 0 {
+            end?(total < 0)
+        } else {
+            var left = total
+            let perCount = 32
+            var suc = false
+            repeat {
+                if let items = dbGetItemSizeInfoOrderByTimeAscWithLimit(count: perCount), !items.isEmpty {
+                    for item in items {
+                        if left > 0 {
+                            if let fileName = item.fileName {
+                                fileDelete(fileName: fileName)
+                            }
+                            if let key = item.key {
+                                suc = dbDeleteItem(key)
+                            } else {
+                                suc = true
+                            }
+                            left -= 1
+                        } else {
+                            break
+                        }
+                        if !suc {
+                            break
+                        }
+                    }
+                } else {
+                    break
+                }
+                progress?(total - left, total)
+            } while (left > 0 && suc)
+            if suc {
+                dbCheckpoint()
+            }
+            end?(!suc)
+        }
+    }
+
+    public func getItemForKey(_ key: String) -> KVStorageItem? {
+        guard !key.isEmpty else {
+            return nil
+        }
+        guard let item = dbGetItem(key: key, excludeInlineData: false) else {
+            return nil
+        }
+        dbUpdateAccessTime(key)
+        if let fileName = item.fileName {
+            if let value = fileRead(fileName: fileName) {
+                item.value = value
+            } else {
+                dbDeleteItem(key)
+                return nil
+            }
+        }
+        return item
+    }
+
+    public func getItemInfoForKey(_ key: String) -> KVStorageItem? {
+        guard !key.isEmpty else {
+            return nil
+        }
+        return dbGetItem(key: key, excludeInlineData: true)
+    }
+
+    public func getItemValueForKey(_ key: String) -> Data? {
+        guard !key.isEmpty else {
+            return nil
+        }
+        var value: Data?
+        switch type {
+        case .file:
+            if let fileName = dbGetFilename(key: key) {
+                value = fileRead(fileName: fileName)
+                if value == nil {
+                    dbDeleteItem(key)
+                }
+            }
+        case .sqlite:
+            value = dbGetValue(key: key)
+        case .mixed:
+            if let fileName = dbGetFilename(key: key) {
+                value = fileRead(fileName: fileName)
+                if value == nil {
+                    dbDeleteItem(key)
+                }
+            } else {
+                value = dbGetValue(key: key)
+            }
+        }
+        if value != nil {
+            dbUpdateAccessTime(key)
+        }
+        return value
+    }
+
+    public func getItemForKeys(_ keys: [String]) -> [KVStorageItem]? {
+        guard !keys.isEmpty else {
+            return nil
+        }
+        if var items = dbGetItems(keys: keys, excludeInlineData: false), !items.isEmpty {
+            if type == .sqlite {
+                var index = 0
+                var max = items.count
+                repeat {
+                    let item = items[index]
+                    if let fileName = item.fileName {
+                        if let value = fileRead(fileName: fileName) {
+                            item.value = value
+                        } else {
+                            if let key = item.key {
+                                dbDeleteItem(key)
+                            }
+                            items.remove(at: index)
+                            index -= 1
+                            max -= 1
+                        }
+                    }
+                    index += 1
+                } while(index < max)
+            }
+            return items.isEmpty ? nil : items
+        } else {
+            return nil
+        }
+    }
+
+    public func getItemInfoForKeys(_ keys: [String]) -> [KVStorageItem]? {
+        guard !keys.isEmpty else {
+            return nil
+        }
+        return dbGetItems(keys: keys, excludeInlineData: true)
+    }
+
+    public func getItemValueForKeys(_ keys: [String]) -> [String: Any]? {
+        guard let items = getItemForKeys(keys) else {
+            return nil
+        }
+        var keyAndValue = [String: Any]()
+        for item in items {
+            if let key = item.key, let value = item.value {
+                keyAndValue[key] = value
+            }
+        }
+        return keyAndValue.isEmpty ? nil : keyAndValue
+    }
+
+    public func itemExistsForKey(_ key: String) -> Bool {
+        guard !key.isEmpty else {
+            return false
+        }
+        return dbGetItemCount(key: key) > 0
+    }
+
+    public func getItemsCount() -> Int {
+        return dbGetTotalItemCount()
+    }
+
+    public func getItemsSize() -> Int {
+        return dbGetTotalItemSize()
     }
 }
