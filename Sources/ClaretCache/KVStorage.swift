@@ -154,6 +154,14 @@ public class KVStorage {
             log("reset error: \(error)")
         }
     }
+    
+    fileprivate final func currentTime() -> TimeInterval {
+        #if canImport(QuartzCore)
+        return CACurrentMediaTime()
+        #else
+        return Date().timeIntervalSince1970
+        #endif
+    }
 
     fileprivate func log(_ items: Any..., separator: String = " ", terminator: String = "\n") {
         if errorLogsEnabled {
@@ -231,7 +239,7 @@ public class KVStorage {
         guard result == SQLITE_OK else {
             database = nil
             dbStmtCache = nil
-            dbLastOpenErrorTime = CACurrentMediaTime()
+            dbLastOpenErrorTime = currentTime()
             dbOpenErrorCount+=1
             log("\(#function) line:\(#line) sqlite open failed (\(result)).")
             return false
@@ -272,7 +280,7 @@ public class KVStorage {
     fileprivate func dbCheck() -> Bool {
         guard database == nil else { return true }
         if dbOpenErrorCount < kMaxErrorRetryCount &&
-            CACurrentMediaTime() - dbLastOpenErrorTime > kMinRetryTimeInterval {
+            currentTime() - dbLastOpenErrorTime > kMinRetryTimeInterval {
                 return dbOpen() && dbInitialize()
         } else {
             return false
