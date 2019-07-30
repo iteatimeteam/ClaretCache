@@ -148,13 +148,13 @@ public class KVStorage {
             try fileManger.removeItem(at: path.appendingPathComponent(kDBFileName))
             try fileManger.removeItem(at: path.appendingPathComponent(kDBShmFileName))
             try fileManger.removeItem(at: path.appendingPathComponent(kDBWalFileName))
-            try fileMoveAllToTrash()
+            fileMoveAllToTrash()
             fileEmptyTrashInBackground()
         } catch {
             log("reset error: \(error)")
         }
     }
-    
+
     fileprivate final func currentTime() -> TimeInterval {
         #if canImport(QuartzCore)
         return CACurrentMediaTime()
