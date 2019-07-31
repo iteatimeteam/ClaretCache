@@ -13,6 +13,10 @@ import SQLite3
 import UIKit.UIApplication
 #endif
 
+#if canImport(QuartzCore)
+import QuartzCore.CABase
+#endif
+
 var isAppExtension: Bool = {
     return Bundle.main.bundleURL.pathExtension == "appex"
 }()
@@ -120,16 +124,18 @@ public class KVStorage {
         fileEmptyTrashInBackground()
     }
 
+    #if canImport(UIKit)
     func sharedExtensionApplication() -> UIApplication? {
         return isAppExtension ? nil : UIApplication.shared
     }
+    #endif
 
     deinit {
-        #if os(iOS) && canImport(UIKit)
+        #if canImport(UIKit)
         let taskID = sharedExtensionApplication()?.beginBackgroundTask(expirationHandler: nil)
         #endif
         dbClose()
-        #if os(iOS) && canImport(UIKit)
+        #if canImport(UIKit)
         if let task = taskID {
             sharedExtensionApplication()?.endBackgroundTask(task)
         }
