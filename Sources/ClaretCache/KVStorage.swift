@@ -14,13 +14,7 @@ import UIKit.UIApplication
 #endif
 
 var isAppExtension: Bool = {
-    guard Bundle.main.bundleURL.pathExtension != "appex" else {
-        return false
-    }
-    guard let app = NSClassFromString("UIApplication"), app.value(forKey: "shared") != nil else {
-        return true
-    }
-    return false
+    return Bundle.main.bundleURL.pathExtension == "appex" 
 }()
 
 public enum KVStorageType {
