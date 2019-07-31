@@ -6,6 +6,7 @@
 //  Copyright © 2019 com.ClaretCache. All rights reserved.
 //
 
+import Foundation
 import SQLite3
 
 #if canImport(UIKit)
