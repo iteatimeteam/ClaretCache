@@ -6,15 +6,14 @@
 //  Copyright © 2019 com.ClaretCache. All rights reserved.
 //
 
-import UIKit
 import SQLite3
 
-#if os(iOS) && canImport(UIKit)
+#if canImport(UIKit)
 import UIKit.UIApplication
 #endif
 
 var isAppExtension: Bool = {
-    return Bundle.main.bundleURL.pathExtension == "appex" 
+    return Bundle.main.bundleURL.pathExtension == "appex"
 }()
 
 public enum KVStorageType {
