@@ -15,6 +15,8 @@
 		01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686B22E719DB008E24FC /* MemoryCache.swift */; };
 		01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686C22E719DB008E24FC /* ClaretCache.swift */; };
 		8E077CCCBC628B6EF406E97A /* Pods_ClaretCacheDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */; };
+		C30EB06522ED8E8A0064ED79 /* KVStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30EB06422ED8E8A0064ED79 /* KVStorage.swift */; };
+		C3BC07DC22EF369600345659 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = C3BC07DB22EF369600345659 /* libsqlite3.tbd */; };
 		F8C53E7722EB9EBC00B53664 /* ClaretCacheDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8C53E7622EB9EBC00B53664 /* ClaretCacheDemoTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +43,8 @@
 		1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ClaretCacheDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		71DE9F8F64DFC38FD8ABCF96 /* Pods-ClaretCacheDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.release.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.release.xcconfig"; sourceTree = "<group>"; };
 		96892E93F01C8D0A4FEC2EC1 /* Pods-ClaretCacheDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ClaretCacheDemo.debug.xcconfig"; path = "Target Support Files/Pods-ClaretCacheDemo/Pods-ClaretCacheDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		C30EB06422ED8E8A0064ED79 /* KVStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KVStorage.swift; sourceTree = "<group>"; };
+		C3BC07DB22EF369600345659 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		F8C53E7422EB9EBC00B53664 /* ClaretCacheDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClaretCacheDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8C53E7622EB9EBC00B53664 /* ClaretCacheDemoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaretCacheDemoTests.swift; sourceTree = "<group>"; };
 		F8C53E7822EB9EBC00B53664 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -51,6 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C3BC07DC22EF369600345659 /* libsqlite3.tbd in Frameworks */,
 				8E077CCCBC628B6EF406E97A /* Pods_ClaretCacheDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -112,6 +117,7 @@
 			children = (
 				01FA686B22E719DB008E24FC /* MemoryCache.swift */,
 				01FA686C22E719DB008E24FC /* ClaretCache.swift */,
+				C30EB06422ED8E8A0064ED79 /* KVStorage.swift */,
 			);
 			path = ClaretCache;
 			sourceTree = "<group>";
@@ -119,6 +125,7 @@
 		53C8A8FFD2D1D8A4F837C496 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C3BC07DB22EF369600345659 /* libsqlite3.tbd */,
 				1BF5D3C4BBDD1FACD276DAA1 /* Pods_ClaretCacheDemo.framework */,
 			);
 			name = Frameworks;
@@ -313,6 +320,7 @@
 			files = (
 				01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */,
 				01C75DEE22E0723E00C7D03F /* ViewController.swift in Sources */,
+				C30EB06522ED8E8A0064ED79 /* KVStorage.swift in Sources */,
 				01C75DEC22E0723E00C7D03F /* AppDelegate.swift in Sources */,
 				01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */,
 			);
@@ -478,14 +486,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 7GZF8W7RUY;
+				DEVELOPMENT_TEAM = 3289Y6BF27;
 				INFOPLIST_FILE = ClaretCacheDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.ClaretCache.-";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ClaretCache.-222";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG ClaretCacheLOG";
 				SWIFT_VERSION = 5.0;
@@ -499,14 +507,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 7GZF8W7RUY;
+				DEVELOPMENT_TEAM = 3289Y6BF27;
 				INFOPLIST_FILE = ClaretCacheDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.ClaretCache.-";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ClaretCache.-222";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
