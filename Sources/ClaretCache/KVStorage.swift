@@ -219,14 +219,18 @@ public class KVStorage {
     fileprivate func fileEmptyTrashInBackground() {
         let trashPath = self.trashPath
         DispatchQueue.global().async {
-            do {
-                let directoryContents = try self.fileManger.contentsOfDirectory(atPath: trashPath.absoluteString)
-                for path in directoryContents {
-                    let fullPath = trashPath.appendingPathComponent(path)
-                    try self.fileManger.removeItem(at: fullPath)
+            if self.fileManger.fileExists(atPath: trashPath.absoluteString) {
+                do {
+                    let directoryContents = try self.fileManger.contentsOfDirectory(atPath: trashPath.absoluteString)
+                    for path in directoryContents {
+                        let fullPath = trashPath.appendingPathComponent(path)
+                        if self.fileManger.fileExists(atPath: fullPath.absoluteString) {
+                            try self.fileManger.removeItem(at: fullPath)
+                        }
+                    }
+                } catch {
+                    self.log("remove trash error: \(error)")
                 }
-            } catch {
-                self.log("remove trash error: \(error)")
             }
         }
     }
@@ -342,11 +346,11 @@ public class KVStorage {
         return string
     }
 
-    fileprivate func dbBindJoinedKeys(keys: [String], stmt: OpaquePointer, fromIndex index: Int) {
+    fileprivate func dbBindJoinedKeys(keys: [String], stmt: OpaquePointer, fromIndex: Int) {
         let max = keys.count
         for index in 0 ..< max {
             let key = keys[index] as NSString
-            sqlite3_bind_text(stmt, Int32(index + index), key.utf8String, -1, nil)
+            sqlite3_bind_text(stmt, Int32(fromIndex + index), key.utf8String, -1, nil)
         }
     }
 
@@ -361,7 +365,7 @@ public class KVStorage {
             sqlite3_bind_text(stmt, 2, nil, -1, nil)
         }
         sqlite3_bind_int(stmt, 3, Int32(value.count))
-        if fileName?.isEmpty ?? false {
+        if fileName?.isEmpty ?? true {
             sqlite3_bind_blob(stmt, 4, (value as NSData).bytes, Int32(value.count), nil)
         } else {
             sqlite3_bind_blob(stmt, 4, nil, 0, nil)
@@ -431,7 +435,7 @@ public class KVStorage {
 
     fileprivate func dbDeleteItems(_ keys: [String]) -> Bool {
         guard dbCheck() else { return false }
-        let sql = "delete from manifest where key in (\(dbJoinedKeys(keys));"
+        let sql = "delete from manifest where key in (\(dbJoinedKeys(keys)));"
         var stmtPointer: OpaquePointer?
         var result = sqlite3_prepare_v2(database, sql, -1, &stmtPointer, nil)
         guard result == SQLITE_OK, let stmt = stmtPointer else {
@@ -470,26 +474,32 @@ public class KVStorage {
     fileprivate func dbGetItemFromStmt(stmt: OpaquePointer, excludeInlineData: Bool) -> KVStorageItem {
         let item = KVStorageItem()
         var index: Int32 = 0
-        item.key = String(cString: UnsafePointer(sqlite3_column_text(stmt, index)))
+        item.key = sqlite3_column_type(stmt, index) != SQLITE_NULL ? String(cString: UnsafePointer(sqlite3_column_text(stmt, index))) : nil
         index += 1
-        item.fileName = String(cString: UnsafePointer(sqlite3_column_text(stmt, index)))
+        item.fileName = sqlite3_column_type(stmt, index) != SQLITE_NULL ? String(cString: UnsafePointer(sqlite3_column_text(stmt, index))) : nil
         index += 1
         item.size = Int(sqlite3_column_int(stmt, index))
         index += 1
-        let inlineData: UnsafeRawPointer? = excludeInlineData ? nil : sqlite3_column_blob(stmt, index)
-        let inlineDataLength = excludeInlineData ? 0 : sqlite3_column_bytes(stmt, index)
-        index += 1
-        if inlineDataLength > 0 && (inlineData != nil) {
-            item.value = NSData(bytes: inlineData, length: Int(inlineDataLength)) as Data
+        if !excludeInlineData {
+            if sqlite3_column_type(stmt, index) != SQLITE_NULL {
+                let inlineData: UnsafeRawPointer? = sqlite3_column_blob(stmt, index)
+                let inlineDataLength = sqlite3_column_bytes(stmt, index)
+                if inlineDataLength > 0 && (inlineData != nil) {
+                    item.value = NSData(bytes: inlineData, length: Int(inlineDataLength)) as Data
+                }
+            }
+            index += 1
         }
         item.modTime = Int(sqlite3_column_int(stmt, index))
         index += 1
         item.accessTime = Int(sqlite3_column_int(stmt, index))
         index += 1
-        let extendedData: UnsafeRawPointer? = sqlite3_column_blob(stmt, index)
-        let extendedDataLength = sqlite3_column_bytes(stmt, index)
-        if extendedDataLength > 0 && (extendedData != nil) {
-            item.extendedData = NSData(bytes: extendedData, length: Int(extendedDataLength)) as Data
+        if sqlite3_column_type(stmt, index) != SQLITE_NULL {
+            let extendedData: UnsafeRawPointer? = sqlite3_column_blob(stmt, index)
+            let extendedDataLength = sqlite3_column_bytes(stmt, index)
+            if extendedDataLength > 0 && (extendedData != nil) {
+                item.extendedData = NSData(bytes: extendedData, length: Int(extendedDataLength)) as Data
+            }
         }
         return item
     }
@@ -517,7 +527,7 @@ public class KVStorage {
         if (excludeInlineData) {
             sql = "select key, filename, size, modification_time, last_access_time, extended_data from manifest where key in (\(dbJoinedKeys(keys)));"
         } else {
-            sql = "select key, filename, size, inline_data, modification_time, last_access_time, extended_data from manifest where key in (\(dbJoinedKeys(keys))"
+            sql = "select key, filename, size, inline_data, modification_time, last_access_time, extended_data from manifest where key in (\(dbJoinedKeys(keys)));"
         }
         var stmtPointer: OpaquePointer?
         var result = sqlite3_prepare_v2(database, sql, -1, &stmtPointer, nil)
@@ -548,7 +558,7 @@ public class KVStorage {
         guard let stmt = dbPrepareStmt(sql) else { return nil }
         sqlite3_bind_text(stmt, 1, (key as NSString).utf8String, -1, nil)
         let result = sqlite3_step(stmt)
-        if (result == SQLITE_ROW) {
+        if (result == SQLITE_ROW && sqlite3_column_type(stmt, 0) != SQLITE_NULL) {
             let inlineData: UnsafeRawPointer? = sqlite3_column_blob(stmt, 0)
             let inlineDataLength = sqlite3_column_bytes(stmt, 0)
             guard inlineDataLength > 0 && (inlineData != nil) else {
@@ -568,7 +578,7 @@ public class KVStorage {
         guard let stmt = dbPrepareStmt(sql) else { return nil }
         sqlite3_bind_text(stmt, 1, (key as NSString).utf8String, -1, nil)
         let result = sqlite3_step(stmt)
-        if (result == SQLITE_ROW) {
+        if (result == SQLITE_ROW && sqlite3_column_type(stmt, 0) != SQLITE_NULL) {
             return String(cString: UnsafePointer(sqlite3_column_text(stmt, 0)))
         } else {
             if (result != SQLITE_DONE) {
@@ -591,7 +601,7 @@ public class KVStorage {
         var fileNames: [String]? = [String]()
         repeat {
             result = sqlite3_step(stmt)
-            if (result == SQLITE_ROW) {
+            if (result == SQLITE_ROW && sqlite3_column_type(stmt, 0) != SQLITE_NULL) {
                 fileNames?.append(String(cString: UnsafePointer(sqlite3_column_text(stmt, 0))))
             } else if (result == SQLITE_DONE) {
                 break
@@ -611,7 +621,7 @@ public class KVStorage {
         var fileNames: [String]? = [String]()
         repeat {
             let result = sqlite3_step(stmt)
-            if (result == SQLITE_ROW) {
+            if (result == SQLITE_ROW && sqlite3_column_type(stmt, 0) != SQLITE_NULL) {
                 fileNames?.append(String(cString: UnsafePointer(sqlite3_column_text(stmt, 0))))
             } else if (result == SQLITE_DONE) {
                 break
@@ -638,13 +648,18 @@ public class KVStorage {
     fileprivate func dbGetItemSizeInfoOrderByTimeAscWithLimit(count: Int) -> [KVStorageItem]? {
         let sql = "select key, filename, size from manifest order by last_access_time asc limit ?1;"
         guard let stmt = dbPrepareStmt(sql) else { return nil }
+        sqlite3_bind_int(stmt, 1, Int32(count))
         var items: [KVStorageItem]? = [KVStorageItem]()
         repeat {
             let result = sqlite3_step(stmt)
             if (result == SQLITE_ROW) {
                 let item = KVStorageItem()
-                item.key = String(cString: UnsafePointer(sqlite3_column_text(stmt, 0)))
-                item.fileName = String(cString: UnsafePointer(sqlite3_column_text(stmt, 1)))
+                if sqlite3_column_type(stmt, 0) != SQLITE_NULL {
+                    item.key = String(cString: UnsafePointer(sqlite3_column_text(stmt, 0)))
+                }
+                if sqlite3_column_type(stmt, 1) != SQLITE_NULL {
+                    item.fileName = String(cString: UnsafePointer(sqlite3_column_text(stmt, 1)))
+                }
                 item.size = Int(sqlite3_column_int(stmt, 2))
                 items?.append(item)
             } else if (result == SQLITE_DONE) {
@@ -690,6 +705,17 @@ public class KVStorage {
     }
 
     // MARK: Public
+    public func saveItem(item: KVStorageItem) -> Bool {
+        guard let key = item.key, let value = item.value else {
+            return false
+        }
+        return saveItem(key: key, value: value, fileName: item.fileName, extendedData: item.extendedData)
+    }
+
+    public func saveItem(key: String, value: Data) -> Bool {
+        return saveItem(key: key, value: value, fileName: nil, extendedData: nil)
+    }
+
     public func saveItem(key: String, value: Data, fileName: String?, extendedData: Data?) -> Bool {
         guard !key.isEmpty, !value.isEmpty else { return false }
         if type == .file && fileName?.isEmpty ?? true { return false }
@@ -793,7 +819,7 @@ public class KVStorage {
         }
         return false
     }
-
+//swiftlint:disable cyclomatic_complexity
     public func removeItemsToFitSize(_ maxSize: Int) -> Bool {
         guard maxSize != Int.max else { return true }
         guard maxSize > 0 else { return removeAllItems() }
@@ -801,20 +827,26 @@ public class KVStorage {
         guard total >= 0 else { return false }
         guard total > maxSize else { return true }
         var suc = false
-        dbGetItemSizeInfoOrderByTimeAscWithLimit(count: 16)?.forEach({ (item) in
-            if let fileName = item.fileName {
-                fileDelete(fileName: fileName)
+        var items: [KVStorageItem]?
+        repeat {
+            items = dbGetItemSizeInfoOrderByTimeAscWithLimit(count: 16)
+            if let temItems = items {
+                for item in temItems {
+                    if let fileName = item.fileName {
+                        fileDelete(fileName: fileName)
+                    }
+                    if let key = item.key {
+                        suc = dbDeleteItem(key)
+                    } else {
+                        suc = true
+                    }
+                    total -= item.size
+                    if total <= maxSize || !suc {
+                        break
+                    }
+                }
             }
-            if let key = item.key {
-                suc = dbDeleteItem(key)
-            } else {
-                suc = true
-            }
-            total -= item.size
-            if total <= maxSize || !suc {
-                return
-            }
-        })
+        } while(total > maxSize && (items?.count ?? 0) > 0 && suc)
         if suc {
             dbCheckpoint()
         }
@@ -828,25 +860,32 @@ public class KVStorage {
         guard total >= 0 else { return false }
         guard total > maxCount else { return true }
         var suc = false
-        dbGetItemSizeInfoOrderByTimeAscWithLimit(count: 16)?.forEach({ (item) in
-            if let fileName = item.fileName {
-                fileDelete(fileName: fileName)
+        var items: [KVStorageItem]?
+        repeat {
+            items = dbGetItemSizeInfoOrderByTimeAscWithLimit(count: 16)
+            if let temItems = items {
+                for item in temItems {
+                    if let fileName = item.fileName {
+                        fileDelete(fileName: fileName)
+                    }
+                    if let key = item.key {
+                        suc = dbDeleteItem(key)
+                    } else {
+                        suc = true
+                    }
+                    total -= 1
+                    if total <= maxCount || !suc {
+                        break
+                    }
+                }
             }
-            if let key = item.key {
-                suc = dbDeleteItem(key)
-            } else {
-                suc = true
-            }
-            total -= 1
-            if total <= maxCount || !suc {
-                return
-            }
-        })
+        } while(total > maxCount && (items?.count ?? 0) > 0 && suc)
         if suc {
             dbCheckpoint()
         }
         return suc
     }
+//swiftlint:enable cyclomatic_complexity
 
     public func removeAllItemsWithProgressBlock(progress: ((_ removedCount: Int, _ totalCount: Int) -> Void)?,
                                                 end: ((_ error: Bool) -> Void)?) {
@@ -930,7 +969,7 @@ public class KVStorage {
     public func getItemForKeys(_ keys: [String]) -> [KVStorageItem]? {
         guard !keys.isEmpty else { return nil }
         if var items = dbGetItems(keys: keys, excludeInlineData: false), !items.isEmpty {
-            if type == .sqlite {
+            if type != .sqlite {
                 var index = 0
                 var max = items.count
                 repeat {
@@ -961,9 +1000,9 @@ public class KVStorage {
         return dbGetItems(keys: keys, excludeInlineData: true)
     }
 
-    public func getItemValueForKeys(_ keys: [String]) -> [String: Any]? {
+    public func getItemValueForKeys(_ keys: [String]) -> [String: Data]? {
         guard let items = getItemForKeys(keys) else { return nil }
-        var keyAndValue = [String: Any]()
+        var keyAndValue = [String: Data]()
         for item in items {
             if let key = item.key, let value = item.value {
                 keyAndValue[key] = value

@@ -12,16 +12,127 @@ import XCTest
 class ClaretCacheDemoTests: XCTestCase {
 
     let cache: MemoryCache<Int, Int> = MemoryCache<Int, Int>()
-
+    var animal = Animal(name: "dawa", age: 3)
+    let pathURL = URL.init(fileURLWithPath: NSHomeDirectory() + "/testKVStroage")
+    var storage: KVStorage?
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
 //        self.cache = MemoryCache<String, Int>()
+        print(pathURL.absoluteString)
+        guard let storage = KVStorage.init(path: pathURL, type: .mixed) else {
+            assert(false, "KVStorage init error")
+        }
+        self.storage = storage
     }
 
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
+    func testStorageInsert() {
+        guard let storage = self.storage else {
+            assert(false, "KVStorage init error")
+        }
+        do {
+            let data = try NSKeyedArchiver.archivedData(withRootObject: animal, requiringSecureCoding: false)
+            let item = KVStorageItem()
+            item.key = "animal2"
+            item.fileName = "image2"
+            item.value = data
+            guard storage.saveItem(item: item) else {
+                return assert(false, "存储出错")
+            }
+        } catch {
+            assert(false, "序列化出错")
+        }
+    }
+    func testStorageQuery() {
+        guard let storage = self.storage else {
+            assert(false, "KVStorage init error")
+        }
+        if let data = storage.getItemForKey("animal")?.value {
+            do {
+                let loadAnimal = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [Animal.self], from: data) as? Animal
+                assert(animal.isEqual(loadAnimal), "KVStorage出错，存和取的不同")
+            } catch {
+                assert(false, "反序列化出错")
+            }
+        } else {
+            assert(false, "KVStorage取出出错")
+        }
+        if let items = storage.getItemForKeys(["animal", "animal2"]), !items.isEmpty {
+            items.forEach { (item) in
+                if let data = item.value {
+                    do {
+                        let loadAnimal = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [Animal.self], from: data) as? Animal
+                        assert(animal.isEqual(loadAnimal), "KVStorage出错，存和取的不同")
+                    } catch {
+                        assert(false, "反序列化出错")
+                    }
+                } else {
+                    assert(false, "KVStorage取出出错")
+                }
+            }
+        } else {
+            assert(false, "KVStorage取出出错")
+        }
+    }
+
+    func testStorageRemove() {
+        guard let storage = self.storage else {
+            assert(false, "KVStorage init error")
+        }
+//        assert(storage.removeItems(keys: ["animal", "animal2"]), "remove error")
+//        assert(storage.removeItemsToFitSize(93000), "removeItemsToFitSize error")
+        assert(storage.removeItemsToFitCount(0), "removeItemsToFitCount error")
+    }
+    func testStorageGetItemInfo() {
+        guard let storage = self.storage else {
+            assert(false, "KVStorage init error")
+        }
+        print("itemExists=\(storage.itemExistsForKey("animal"))")
+        print("getItemsCount=\(storage.getItemsCount())")
+        print("getItemsSize=\(storage.getItemsSize())")
+        if let item = storage.getItemInfoForKey("animal") {
+            print("item.key=\(String(describing: item.key)), accessTime=\(item.accessTime), modifyTiem=\(item.modTime), fileName=\(String(describing: item.fileName))")
+        } else {
+            assert(false, "KVStorage取出出错")
+        }
+        if let items = storage.getItemInfoForKeys(["animal", "animal2"]), !items.isEmpty {
+            items.forEach { (item) in
+                print("item.key=\(String(describing: item.key)), accessTime=\(item.accessTime), modifyTiem=\(item.modTime), fileName=\(String(describing: item.fileName))")
+            }
+        } else {
+            assert(false, "KVStorage取出出错")
+        }
+    }
+    func testStorageGetItemValue() {
+        guard let storage = self.storage else {
+            assert(false, "KVStorage init error")
+        }
+        if let data = storage.getItemValueForKey("animal") {
+            do {
+                let loadAnimal = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [Animal.self], from: data) as? Animal
+                assert(animal.isEqual(loadAnimal), "KVStorage出错，存和取的不同")
+            } catch {
+                assert(false, "反序列化出错")
+            }
+        } else {
+            assert(false, "KVStorage取出出错")
+        }
+        if let datas = storage.getItemValueForKeys(["animal", "animal2"]), !datas.isEmpty {
+            datas.forEach { (_, data) in
+                do {
+                    let loadAnimal = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [Animal.self], from: data) as? Animal
+                    assert(animal.isEqual(loadAnimal), "KVStorage出错，存和取的不同")
+                } catch {
+                    assert(false, "反序列化出错")
+                }
+            }
+        } else {
+            assert(false, "KVStorage取出出错")
+        }
+    }
     func testInsert() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.
