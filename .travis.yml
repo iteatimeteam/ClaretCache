@@ -1,6 +1,9 @@
 osx_image: xcode11
 language: swift
 
+env:
+  - PROJECT_NAME=ClaretCacheDemo
+
 jobs:
   include:
     # - stage: Lint
@@ -10,7 +13,7 @@ jobs:
       - swiftlint --config configs/.swiftlint.yml
       - swift test
       - swift build
-      - xcodebuild -workspace ClaretCacheDemo.xcworkspace -scheme ClaretCacheDemo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone XR,OS=12.1' build
+      - xcodebuild -workspace ${PROJECT_NAME}.xcworkspace -scheme ${PROJECT_NAME} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone XR,OS=12.1' build
 # stages:
 # - Lint
 # - Test
