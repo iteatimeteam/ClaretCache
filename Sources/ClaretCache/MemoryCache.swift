@@ -114,6 +114,12 @@ public extension MemoryCache {
     /// - Parameter atKey: atKey An object identifying the value. If nil, just return **NO**.
     /// - Returns: Whether the atKey is in cache.
     final func contains(_ atKey: Key?) -> Bool {
+        
+        let node = lru.get(atKey)
+        if node != nil {
+            
+            return true
+        }
         return false
     }
 
@@ -122,9 +128,27 @@ public extension MemoryCache {
     /// - Parameter value: The object to store in the cache. If nil, it calls **remove(_ atKey:)**.
     /// - Parameter atKey: The atKey with which to associate the value. If nil, this method has no effect.
     /// - Parameter cost: The cost with which to associate the key-value pair.
-    final func set<Value, Key>(_ value: Value?, _ atKey: Key?, cost: UInt = 0) {
+    final func set(_ value: Value?, _ atKey: Key?, cost: UInt = 0) {
         // Delete new if value is nil
         // Cache if value is not nil
+        
+        guard let atKey = atKey, let value = value else {
+            
+            return
+        }
+        
+        let node = Node(atKey, value, cost: cost)
+        lru.put(atKey, node: node)
+        
+        if lru.totalCount > countLimit {
+            
+            trimCount(countLimit)
+        }
+        
+        if lru.totalCost > costLimit {
+            
+            trimCost(costLimit)
+        }
     }
 
     /// Removes the value of the specified key in the cache.
@@ -224,8 +248,30 @@ private extension MemoryCache {
 
  Typically, you should not use this class directly.
  */
+
+fileprivate final class Node<Key, Value> : Equatable where Key : Hashable {
+    
+    var prev: Node?
+    var next: Node?
+    var key: Key
+    var value: Value
+    var cost: UInt = 0
+    var time: TimeInterval = 0.0
+    init(_ key: Key, _ value: Value, cost: UInt) {
+        
+        self.key = key
+        self.value = value
+        self.cost = cost
+    }
+    
+    static func == (lhs: Node<Key, Value>, rhs: Node<Key, Value>) -> Bool {
+        
+        return lhs.key == rhs.key
+    }
+}
+
 fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
-    var dic: [Key:Value] = [:]
+    var dic: [Key:Node] = Dictionary<Key, Node<Key, Value>>.init()
     var totalCost: UInt = 0
     var totalCount: UInt = 0
     var head: Node<Key, Value>? // MRU, do not change it directly
@@ -233,17 +279,74 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     var releaseOnMainThread: Bool = false
     var releaseAsynchronously: Bool = true
 
-    final class Node<Key, Value> where Key : Hashable {
-        var prev: Node?
-        var next: Node?
-        var key: Key?
-        var value: Value?
-        var cost: UInt = 0
-        var time: TimeInterval = 0.0
-    }
-
     init() {
 
+    }
+    
+    // MARK: -
+    /// 从内存中查询key，如果有缓存存在，则返回。并将缓存移至最前。
+    func get(_ key: Key?) -> Node<Key, Value>? {
+        
+        guard let key = key else {
+            
+            return nil
+        }
+        let dicNode = dic[key]
+        if dicNode != nil {
+            
+            let prevDicNode = dicNode!.prev
+            let nextDicNode = dicNode!.next
+            nextDicNode?.prev = prevDicNode
+            prevDicNode?.next = nextDicNode
+            
+            dicNode?.prev = nil
+            dicNode?.next = head
+            head?.prev = dicNode
+            
+            head = dicNode
+        }
+        
+        return dicNode
+    }
+    
+    func put(_ key: Key, node: Node<Key, Value>) {
+        
+        let dicNode = get(key)
+        if dicNode != nil {
+            
+            dic[key] = node
+        } else {
+            
+            dic.updateValue(node, forKey: key)
+            totalCount += 1
+            totalCost += node.cost
+        }
+    }
+    
+    func delete(_ key: Key?) {
+        
+        guard let key = key else {
+            
+            return
+        }
+        let dicNode = dic[key]
+        if dicNode != nil {
+            
+            let prevDicNode = dicNode!.prev
+            let nextDicNode = dicNode!.next
+            if dicNode == head {
+                
+                head = nextDicNode
+            } else if dicNode == tail {
+                
+                tail = prevDicNode
+            }
+            nextDicNode?.prev = prevDicNode
+            prevDicNode?.next = nextDicNode
+            dicNode?.prev = nil
+            dicNode?.next = nil
+            dic.removeValue(forKey: key)
+        }
     }
 }
 
