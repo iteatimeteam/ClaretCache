@@ -14,6 +14,7 @@
 		01C75DF622E0724000C7D03F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DF422E0724000C7D03F /* LaunchScreen.storyboard */; };
 		01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686B22E719DB008E24FC /* MemoryCache.swift */; };
 		01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686C22E719DB008E24FC /* ClaretCache.swift */; };
+		19720A6124D80B0900A403CE /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19720A6024D80B0900A403CE /* NetworkExtension.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		01C75DF722E0724000C7D03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		01FA686B22E719DB008E24FC /* MemoryCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MemoryCache.swift; sourceTree = "<group>"; };
 		01FA686C22E719DB008E24FC /* ClaretCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClaretCache.swift; sourceTree = "<group>"; };
+		19720A6024D80B0900A403CE /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -33,6 +35,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				19720A6124D80B0900A403CE /* NetworkExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -44,6 +47,7 @@
 			children = (
 				01C75DEA22E0723E00C7D03F /* ClaretCacheDemo */,
 				01C75DE922E0723E00C7D03F /* Products */,
+				19720A5F24D80B0900A403CE /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -84,6 +88,14 @@
 				01FA686C22E719DB008E24FC /* ClaretCache.swift */,
 			);
 			path = ClaretCache;
+			sourceTree = "<group>";
+		};
+		19720A5F24D80B0900A403CE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				19720A6024D80B0900A403CE /* NetworkExtension.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -331,8 +343,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ClaretCacheDemo/ClaretCacheDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 7GZF8W7RUY;
+				DEVELOPMENT_TEAM = C8KTGUMXJU;
 				INFOPLIST_FILE = ClaretCacheDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -350,8 +363,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ClaretCacheDemo/ClaretCacheDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 7GZF8W7RUY;
+				DEVELOPMENT_TEAM = C8KTGUMXJU;
 				INFOPLIST_FILE = ClaretCacheDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (

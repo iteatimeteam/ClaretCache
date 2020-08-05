@@ -142,12 +142,12 @@ public extension MemoryCache {
         
         if lru.totalCount > countLimit {
             
-            trimCount(countLimit)
+            trimTo(count: countLimit)
         }
         
         if lru.totalCost > costLimit {
             
-            trimCost(costLimit)
+            trimTo(cost: countLimit)
         }
     }
 
@@ -329,24 +329,44 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
             
             return
         }
-        let dicNode = dic[key]
-        if dicNode != nil {
+        guard let dicNode = dic[key] else {
             
-            let prevDicNode = dicNode!.prev
-            let nextDicNode = dicNode!.next
-            if dicNode == head {
-                
-                head = nextDicNode
-            } else if dicNode == tail {
-                
-                tail = prevDicNode
-            }
-            nextDicNode?.prev = prevDicNode
-            prevDicNode?.next = nextDicNode
-            dicNode?.prev = nil
-            dicNode?.next = nil
-            dic.removeValue(forKey: key)
+            return
         }
+        
+        let prevDicNode = dicNode.prev
+        let nextDicNode = dicNode.next
+        if dicNode == head {
+            
+            head = nextDicNode
+        } else if dicNode == tail {
+            
+            tail = prevDicNode
+        }
+        nextDicNode?.prev = prevDicNode
+        prevDicNode?.next = nextDicNode
+        dicNode.prev = nil
+        dicNode.next = nil
+        dic.removeValue(forKey: key)
+        
+        totalCount -= 1
+        totalCost -= dicNode.cost
+    }
+    
+    func deleteTail() -> Node<Key, Value>? {
+        
+        guard let tailNode = tail else {
+            
+            return nil
+        }
+        
+        let prevTailNode = tailNode.prev
+        
+        tailNode.prev = nil
+        tail = prevTailNode
+        tail?.next = nil
+        
+        return tailNode
     }
 }
 
