@@ -114,7 +114,9 @@ public extension MemoryCache {
     /// - Parameter atKey: atKey An object identifying the value. If nil, just return **NO**.
     /// - Returns: Whether the atKey is in cache.
     final func contains(_ atKey: Key?) -> Bool {
-        return false
+        let node = lru.get(atKey)
+        
+        return node != nil
     }
 
     /// Sets the value of the specified key in the cache, and associates the key-value
@@ -122,21 +124,43 @@ public extension MemoryCache {
     /// - Parameter value: The object to store in the cache. If nil, it calls **remove(_ atKey:)**.
     /// - Parameter atKey: The atKey with which to associate the value. If nil, this method has no effect.
     /// - Parameter cost: The cost with which to associate the key-value pair.
-    final func set<Value, Key>(_ value: Value?, _ atKey: Key?, cost: UInt = 0) {
+    final func set(_ value: Value?, _ atKey: Key?, cost: UInt = 0) {
         // Delete new if value is nil
         // Cache if value is not nil
+        guard let atKey = atKey else {
+            
+            return
+        }
+        
+        guard let value = value else {
+            
+            remove(atKey)
+            return
+        }
+        
+        lru.put(atKey, value, cost: cost)
+        
+        if lru.totalCount > countLimit {
+            
+            trimTo(count: countLimit)
+        }
+        
+        if lru.totalCost > costLimit {
+            
+            trimTo(cost: countLimit)
+        }
     }
 
     /// Removes the value of the specified key in the cache.
     /// - Parameter atKey: atKey The atKey identifying the value to be removed.
     /// If nil, this method has no effect.
     final func remove(_ atKey: Key?) {
-
+        lru.delete(atKey)
     }
 
     /// Empties the cache immediately.
     final func removeAll() {
-
+        lru.deleteAll()
     }
 
     final subscript(_ atKey: Key?) -> Value? {
@@ -206,11 +230,17 @@ private extension MemoryCache {
     #endif
 
     final func trimCount(_ count: UInt) {
-
+        while lru.totalCount > count {
+            
+            _ = lru.deleteTail()
+        }
     }
 
     final func trimCost(_ cost: UInt) {
-
+        while lru.totalCost > cost {
+            
+            _ = lru.deleteTail()
+        }
     }
 
     final func trimAge(_ age: UInt) {
@@ -224,8 +254,9 @@ private extension MemoryCache {
 
  Typically, you should not use this class directly.
  */
+
 fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
-    var dic: [Key:Value] = [:]
+    var dic: [Key:Node] = Dictionary<Key, Node<Key, Value>>.init()
     var totalCost: UInt = 0
     var totalCount: UInt = 0
     var head: Node<Key, Value>? // MRU, do not change it directly
@@ -233,17 +264,128 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     var releaseOnMainThread: Bool = false
     var releaseAsynchronously: Bool = true
 
-    final class Node<Key, Value> where Key : Hashable {
+    fileprivate final class Node<Key, Value> : Equatable where Key : Hashable {
         var prev: Node?
         var next: Node?
-        var key: Key?
-        var value: Value?
+        var key: Key
+        var value: Value
         var cost: UInt = 0
         var time: TimeInterval = 0.0
+        init(key: Key, value: Value, cost: UInt) {
+            self.key = key
+            self.value = value
+            self.cost = cost
+        }
+        
+        static func == (lhs: Node<Key, Value>, rhs: Node<Key, Value>) -> Bool {
+            return lhs.key == rhs.key
+        }
     }
-
+    
     init() {
 
+    }
+    
+    // MARK: -
+    /// 从内存中查询key，如果有缓存存在，则返回。并将缓存移至最前。
+    func get(_ key: Key?) -> Node<Key, Value>? {
+        guard let key = key else {
+            
+            return nil
+        }
+        let dicNode = dic[key]
+        if dicNode != nil {
+            
+            let prevDicNode = dicNode!.prev
+            let nextDicNode = dicNode!.next
+            nextDicNode?.prev = prevDicNode
+            prevDicNode?.next = nextDicNode
+            
+            dicNode?.prev = nil
+            dicNode?.next = head
+            head?.prev = dicNode
+            
+            head = dicNode
+        }
+        
+        return dicNode
+    }
+    
+    func put(_ key: Key, _ value: Value, cost: UInt = 0) {
+        let node = Node(key: key, value: value, cost: cost)
+        let dicNode = get(key)
+        if dicNode != nil {
+            
+            dic[key] = node
+        } else {
+            
+            dic.updateValue(node, forKey: key)
+            totalCount += 1
+            totalCost += node.cost
+        }
+    }
+    
+    func delete(_ key: Key?) {
+        guard let key = key else {
+            
+            return
+        }
+        guard let dicNode = dic[key] else {
+            
+            return
+        }
+        
+        let prevDicNode = dicNode.prev
+        let nextDicNode = dicNode.next
+        if dicNode == head {
+            
+            head = nextDicNode
+        } else if dicNode == tail {
+            
+            tail = prevDicNode
+        }
+        nextDicNode?.prev = prevDicNode
+        prevDicNode?.next = nextDicNode
+        dicNode.prev = nil
+        dicNode.next = nil
+        dic.removeValue(forKey: key)
+        
+        totalCount -= 1
+        totalCost -= dicNode.cost
+    }
+    
+    func deleteTail() -> Node<Key, Value>? {
+        guard let tailNode = tail else {
+            
+            return nil
+        }
+        
+        let prevTailNode = tailNode.prev
+        
+        tailNode.prev = nil
+        tail = prevTailNode
+        tail?.next = nil
+        
+        totalCount -= 1
+        totalCost -= tailNode.cost
+        
+        return tailNode
+    }
+    
+    func deleteAll() {
+        var node = head
+        while let tempNode = node?.next {
+            
+            node?.next = nil
+            tempNode.prev = nil
+            node = tempNode
+        }
+        dic.removeAll()
+        head = nil
+        tail = nil
+        
+        totalCount = 0
+        totalCost = 0
     }
 }
 
