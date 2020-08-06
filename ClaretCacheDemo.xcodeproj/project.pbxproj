@@ -14,7 +14,6 @@
 		01C75DF622E0724000C7D03F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01C75DF422E0724000C7D03F /* LaunchScreen.storyboard */; };
 		01FA686D22E719DB008E24FC /* MemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686B22E719DB008E24FC /* MemoryCache.swift */; };
 		01FA686E22E719DB008E24FC /* ClaretCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FA686C22E719DB008E24FC /* ClaretCache.swift */; };
-		19720A6124D80B0900A403CE /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19720A6024D80B0900A403CE /* NetworkExtension.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */

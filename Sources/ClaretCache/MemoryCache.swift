@@ -114,13 +114,9 @@ public extension MemoryCache {
     /// - Parameter atKey: atKey An object identifying the value. If nil, just return **NO**.
     /// - Returns: Whether the atKey is in cache.
     final func contains(_ atKey: Key?) -> Bool {
-        
         let node = lru.get(atKey)
-        if node != nil {
-            
-            return true
-        }
-        return false
+        
+        return node != nil
     }
 
     /// Sets the value of the specified key in the cache, and associates the key-value
@@ -131,14 +127,18 @@ public extension MemoryCache {
     final func set(_ value: Value?, _ atKey: Key?, cost: UInt = 0) {
         // Delete new if value is nil
         // Cache if value is not nil
-        
-        guard let atKey = atKey, let value = value else {
+        guard let atKey = atKey else {
             
             return
         }
         
-        let node = Node(atKey, value, cost: cost)
-        lru.put(atKey, node: node)
+        guard let value = value else {
+            
+            remove(atKey)
+            return
+        }
+        
+        lru.put(atKey, value, cost: cost)
         
         if lru.totalCount > countLimit {
             
@@ -155,12 +155,12 @@ public extension MemoryCache {
     /// - Parameter atKey: atKey The atKey identifying the value to be removed.
     /// If nil, this method has no effect.
     final func remove(_ atKey: Key?) {
-
+        lru.delete(atKey)
     }
 
     /// Empties the cache immediately.
     final func removeAll() {
-
+        lru.deleteAll()
     }
 
     final subscript(_ atKey: Key?) -> Value? {
@@ -249,27 +249,6 @@ private extension MemoryCache {
  Typically, you should not use this class directly.
  */
 
-fileprivate final class Node<Key, Value> : Equatable where Key : Hashable {
-    
-    var prev: Node?
-    var next: Node?
-    var key: Key
-    var value: Value
-    var cost: UInt = 0
-    var time: TimeInterval = 0.0
-    init(_ key: Key, _ value: Value, cost: UInt) {
-        
-        self.key = key
-        self.value = value
-        self.cost = cost
-    }
-    
-    static func == (lhs: Node<Key, Value>, rhs: Node<Key, Value>) -> Bool {
-        
-        return lhs.key == rhs.key
-    }
-}
-
 fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     var dic: [Key:Node] = Dictionary<Key, Node<Key, Value>>.init()
     var totalCost: UInt = 0
@@ -279,6 +258,26 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     var releaseOnMainThread: Bool = false
     var releaseAsynchronously: Bool = true
 
+    fileprivate final class Node<Key, Value> : Equatable where Key : Hashable {
+        var prev: Node?
+        var next: Node?
+        var key: Key
+        var value: Value
+        var cost: UInt = 0
+        var time: TimeInterval = 0.0
+        init(key: Key, value: Value, cost: UInt) {
+            
+            self.key = key
+            self.value = value
+            self.cost = cost
+        }
+        
+        static func == (lhs: Node<Key, Value>, rhs: Node<Key, Value>) -> Bool {
+            
+            return lhs.key == rhs.key
+        }
+    }
+    
     init() {
 
     }
@@ -286,7 +285,6 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     // MARK: -
     /// 从内存中查询key，如果有缓存存在，则返回。并将缓存移至最前。
     func get(_ key: Key?) -> Node<Key, Value>? {
-        
         guard let key = key else {
             
             return nil
@@ -309,8 +307,8 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
         return dicNode
     }
     
-    func put(_ key: Key, node: Node<Key, Value>) {
-        
+    func put(_ key: Key, _ value: Value, cost: UInt = 0) {
+        let node = Node(key: key, value: value, cost: cost)
         let dicNode = get(key)
         if dicNode != nil {
             
@@ -324,7 +322,6 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     }
     
     func delete(_ key: Key?) {
-        
         guard let key = key else {
             
             return
@@ -354,7 +351,6 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     }
     
     func deleteTail() -> Node<Key, Value>? {
-        
         guard let tailNode = tail else {
             
             return nil
@@ -367,6 +363,19 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
         tail?.next = nil
         
         return tailNode
+    }
+    
+    func deleteAll() {
+        var node = head
+        while node != nil {
+            let tempNode = node?.next
+            node?.next = nil
+            tempNode?.prev = nil
+            node = tempNode
+        }
+        dic.removeAll()
+        head = nil
+        tail = nil
     }
 }
 
