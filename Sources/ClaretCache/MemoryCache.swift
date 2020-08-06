@@ -374,10 +374,10 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
     
     func deleteAll() {
         var node = head
-        while node != nil {
-            let tempNode = node?.next
+        while let tempNode = node?.next {
+            
             node?.next = nil
-            tempNode?.prev = nil
+            tempNode.prev = nil
             node = tempNode
         }
         dic.removeAll()
