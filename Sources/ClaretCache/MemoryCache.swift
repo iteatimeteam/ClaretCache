@@ -230,11 +230,17 @@ private extension MemoryCache {
     #endif
 
     final func trimCount(_ count: UInt) {
-
+        while lru.totalCount > count {
+            
+            _ = lru.deleteTail()
+        }
     }
 
     final func trimCost(_ cost: UInt) {
-
+        while lru.totalCost > cost {
+            
+            _ = lru.deleteTail()
+        }
     }
 
     final func trimAge(_ age: UInt) {
@@ -266,14 +272,12 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
         var cost: UInt = 0
         var time: TimeInterval = 0.0
         init(key: Key, value: Value, cost: UInt) {
-            
             self.key = key
             self.value = value
             self.cost = cost
         }
         
         static func == (lhs: Node<Key, Value>, rhs: Node<Key, Value>) -> Bool {
-            
             return lhs.key == rhs.key
         }
     }
@@ -362,6 +366,9 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
         tail = prevTailNode
         tail?.next = nil
         
+        totalCount -= 1
+        totalCost -= tailNode.cost
+        
         return tailNode
     }
     
@@ -376,6 +383,9 @@ fileprivate final class LinkedMap<Key, Value> where Key : Hashable {
         dic.removeAll()
         head = nil
         tail = nil
+        
+        totalCount = 0
+        totalCost = 0
     }
 }
 
